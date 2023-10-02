@@ -1,2 +1,26 @@
 {:deps
- {poly/web-ui {:local/root "../../bases/web-ui"}}}
+ {poly/electric-clojure {:local/root "../../components/electric-clojure"}
+  poly/github {:local/root "../../components/github"}
+  poly/web-ui {:local/root "../../bases/web-ui"}}
+ :aliases
+ {:test
+  {:extra-deps
+   {polylith/clj-poly
+    {:deps/root "projects/poly"
+     :git/url "https://github.com/polyfy/polylith.git"
+     :sha "48d8a14d31a02cd2229d99bca094fe383d3dcace"}
+    polylith-kaocha.components/util
+    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
+     :git/tag "v0.8.2"
+     :git/sha "d1fcd40"
+     :deps/root "components/util"}
+    polylith-kaocha/kaocha-wrapper
+    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
+     :git/tag "v0.8.2"
+     :git/sha "d1fcd40"
+     :deps/root "projects/kaocha-wrapper"}
+    polylith-kaocha/test-runner
+    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
+     :git/tag "v0.8.2"
+     :git/sha "d1fcd40"
+     :deps/root "projects/test-runner"}}}}}

@@ -1,0 +1,2 @@
+{:deps
+ {poly/web-ui {:local/root "../../bases/web-ui"}}}

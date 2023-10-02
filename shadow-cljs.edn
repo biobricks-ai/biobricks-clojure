@@ -1,0 +1,21 @@
+{:deps {:aliases [:dev]}
+ :nrepl {:port 9001}
+ :builds
+ {:dev
+  {:target :browser
+   :devtools {:watch-dir "bases/web-ui/resources/public" ; live reload CSS
+              :hud #{:errors :progress}
+              :ignore-warnings true} ; warnings don't prevent hot-reload
+   :output-dir "bases/web-ui/resources/public/js"
+   :asset-path "/js"
+   :modules {:main {:entries [biobricks.web-ui.api]
+                    :init-fn biobricks.web-ui.api/start!}}
+   :build-hooks [(shadow.cljs.build-report/hook {:output-to "target/build_report.html"})
+                 (biobricks.web-ui.api/rcf-shadow-hook)]}
+  :prod
+  {:target :browser
+   :output-dir "bases/web-ui/resources/public/js"
+   :asset-path "/js"
+   :module-hash-names true
+   :modules {:main {:entries [biobricks.web-ui.api]
+                    :init-fn biobricks.web-ui.api/start!}}}}}

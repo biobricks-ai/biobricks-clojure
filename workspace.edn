@@ -1,0 +1,10 @@
+;; https://github.com/polyfy/polylith/blob/master/doc/ws.md#settings
+{:vcs {:name "git" :auto-add false}
+ :top-namespace "biobricks"
+ :interface-ns "interface"
+ :default-profile-name "default"
+ :compact-views #{}
+ :tag-patterns {:stable "stable-*"
+                :release "v[0-9]*"}
+ :projects {"biobricks-web" {:alias "bw"}}
+ :test {:create-test-runner polylith-kaocha.test-runner/create}}

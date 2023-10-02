@@ -1,0 +1,24 @@
+{
+  "calva.evalOnSave": true,
+  "calva.paredit.strictPreventUnmatchedClosingBracket": true,
+  "calva.replConnectSequences": [
+    {
+      "name": "BioBricks",
+      "afterCLJReplJackInCode": "((requiring-resolve 'biobricks.web-ui.api/main))",
+      "autoSelectForJackIn": true,
+      "cljsType": "none",
+      "menuSelections": {
+        "cljAliases": [
+          "dev"
+        ]
+      },
+      "projectRootPath": [
+        "."
+      ],
+      "projectType": "deps.edn"
+    }
+  ],
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true
+}

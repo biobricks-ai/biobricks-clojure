@@ -1,0 +1,11 @@
+.*
+!.editorconfig
+!.envrc
+!.gitignore
+!.vscode
+
+data
+result
+target
+
+/bases/web-ui/resources/public/js

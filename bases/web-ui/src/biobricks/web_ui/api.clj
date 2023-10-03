@@ -1,5 +1,6 @@
 (ns biobricks.web-ui.api
   (:require [hashp.core]
+            [biobricks.electric-jetty.ifc :as electric-jetty]
             [clojure.java.io :as io]
             [shadow.cljs.devtools.config :as shadow-config]))
 
@@ -15,7 +16,6 @@
           (assoc :user-config (shadow-config/load-user-config))))))
 
 ; lazy load dev stuff - for faster REPL startup and cleaner dev classpath
-(def start-electric-server! (delay @(requiring-resolve 'biobricks.electric-jetty.ifc/start-server!)))
 (def shadow-start! (delay @(requiring-resolve 'shadow.cljs.devtools.server/start!)))
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
 
@@ -27,7 +27,7 @@
   (@shadow-start! (load-cljs-edn)) ; serves index.html as well
   (@shadow-watch :dev) ; depends on shadow server
   ; Shadow loads the app here, such that it shares memory with server.
-  (def server (@start-electric-server! electric-server-config))
+  (def server (electric-jetty/start-server! electric-server-config))
   (comment (.stop server)))
 
 ; Server-side Electric userland code is lazy loaded by the shadow build.

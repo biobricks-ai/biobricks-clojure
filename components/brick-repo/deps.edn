@@ -1,0 +1,8 @@
+{:paths ["src"]
+ :deps
+ {babashka/fs {:mvn/version "0.4.19"}
+  clj-commons/clj-yaml {:mvn/version "1.0.27"}}
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :extra-deps {}}}}

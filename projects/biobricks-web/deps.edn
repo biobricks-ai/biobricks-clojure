@@ -1,6 +1,8 @@
 {:deps
- {poly/electric-clojure {:local/root "../../components/electric-clojure"}
+ {poly/brick-repo {:local/root "../../components/brick-repo"}
+  poly/electric-jetty {:local/root "../../components/electric-jetty"}
   poly/github {:local/root "../../components/github"}
+  poly/process {:local/root "../../components/process"}
   poly/web-ui {:local/root "../../bases/web-ui"}}
  :aliases
  {:test

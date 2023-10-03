@@ -12,6 +12,7 @@
         devShells.default = mkShell {
           buildInputs = [
             clojure
+            git
             jdk
             nodePackages.npm
             rlwrap # Used by clj

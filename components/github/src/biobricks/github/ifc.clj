@@ -1,4 +1,4 @@
-(ns biobricks.github.interface
+(ns biobricks.github.ifc
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
             [hato.client :as hc]))

@@ -1,4 +1,4 @@
-(ns biobricks.electric-jetty.interface
+(ns biobricks.electric-jetty.ifc
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]

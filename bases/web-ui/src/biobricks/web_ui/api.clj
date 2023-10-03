@@ -15,7 +15,7 @@
           (assoc :user-config (shadow-config/load-user-config))))))
 
 ; lazy load dev stuff - for faster REPL startup and cleaner dev classpath
-(def start-electric-server! (delay @(requiring-resolve 'biobricks.electric-jetty.interface/start-server!)))
+(def start-electric-server! (delay @(requiring-resolve 'biobricks.electric-jetty.ifc/start-server!)))
 (def shadow-start! (delay @(requiring-resolve 'shadow.cljs.devtools.server/start!)))
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
 

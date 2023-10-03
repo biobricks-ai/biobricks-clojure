@@ -1,6 +1,6 @@
-(ns biobricks.github.interface-test
+(ns biobricks.github.ifc-test
   (:require [clojure.test :as test :refer [deftest is]]
-            [biobricks.github.interface :as github]))
+            [biobricks.github.ifc :as github]))
 
 (deftest test-list-org-repos
   (is (= "biobricks-ai"

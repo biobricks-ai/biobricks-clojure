@@ -1,7 +1,7 @@
 ;; https://github.com/polyfy/polylith/blob/master/doc/ws.md#settings
 {:vcs {:name "git" :auto-add false}
  :top-namespace "biobricks"
- :interface-ns "interface"
+ :interface-ns "ifc"
  :default-profile-name "default"
  :compact-views #{}
  :tag-patterns {:stable "stable-*"

@@ -1,5 +1,5 @@
 (ns biobricks.web-ui.app
-  (:require #?(:clj [biobricks.github.interface :as github])
+  (:require #?(:clj [biobricks.github.ifc :as github])
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
             [hyperfiddle.electric :as e]

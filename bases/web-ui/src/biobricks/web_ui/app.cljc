@@ -30,6 +30,7 @@
                               (assoc brick-info
                                      :brick-health-git (brick-repo/brick-health-git dir)))]
              (swap! !repos assoc-in [url :brick-info] brick-info)))))
+     #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
      (defonce repo-puller
        (doto (Thread. pull-repos)
          (.setDaemon true)

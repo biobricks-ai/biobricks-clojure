@@ -1,6 +1,7 @@
 {:paths ["development"],
  :deps
- {poly/web-ui {:local/root "bases/web-ui"}}
+ {poly/github {:local/root "components/github"}
+  poly/web-ui {:local/root "bases/web-ui"}}
  :aliases
  {:antq
   {:deps

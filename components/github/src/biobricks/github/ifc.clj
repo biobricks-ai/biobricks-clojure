@@ -1,7 +1,9 @@
 (ns biobricks.github.ifc
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [hato.client :as hc]))
+            [hato.client :as hc])
+  (:import [java.time LocalDateTime]
+           [java.time.format DateTimeFormatter]))
 
 (defn get-url [url & [opts]]
   (let [response (hc/get
@@ -30,3 +32,10 @@
       results
       (when (= per-page (count results))
         (list-org-repos org-name (inc page-num)))))))
+
+(defn parse-datetime
+  "Parse a string in ISO Date/Time format to a java.time.LocalDateTime.
+
+   Usage: `(parse-datetime \"2023-03-17T19:08:13Z\")`"
+  [s]
+  (LocalDateTime/parse s DateTimeFormatter/ISO_DATE_TIME))

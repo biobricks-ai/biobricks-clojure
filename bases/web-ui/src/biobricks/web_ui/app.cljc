@@ -38,7 +38,7 @@
 
 (e/defn Repo
   [{:as repo
-    :keys [description html_url name]
+    :keys [description html_url name updated_at]
     {:keys [data-bytes health-git]} :brick-info}]
   (dom/div
    (dom/props {:class "repo-card"})
@@ -67,6 +67,10 @@
             (dom/li (dom/text v))))))))
    (dom/p
     (dom/text description))
+   (dom/p
+    (dom/text
+     "Updated "
+     (e/server (humanize/datetime (github/parse-datetime updated_at)))))
    (ElementData. repo)))
 
 (e/defn Repos [repos]

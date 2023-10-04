@@ -2,7 +2,9 @@
   (:require [babashka.fs :as fs]
             [biobricks.process.ifc :as p]
             [clj-yaml.core :as yaml]
-            [clojure.java.io :as io]))
+            [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (defn clone
   "Clones a git repo into dir.
@@ -23,14 +25,25 @@
   [dir]
   (fs/exists? (fs/path dir "dvc.yaml")))
 
+(defn brick-data-bytes
+  "Returns the size of the brick data in bytes."
+  [dir]
+  (->> @(p/process
+         {:dir (fs/file dir) :err :string :out :string}
+         "dvc" "list" "." "--json")
+       :out
+       json/read-str
+       (keep (fn [{:strs [path size]}]
+               (when (or (= "brick" path) (str/starts-with? path "brick/"))
+                 size)))
+       (reduce + 0)))
+
 (defn brick-health-git
   "Returns the result of health checks that can be performed on the files
    stored in git (not DVC)."
-  [dir]
-  {:has-brick-dir? (or (with-open [rdr (io/reader (fs/file dir "dvc.lock"))]
-                         (->> rdr yaml/parse-stream :stages vals (mapcat :outs)
-                              (map :path) (some #{"brick/"}) boolean))
-                       "Does not have a \"/brick\" output directory specified in \"/dvc.lock\".")
+  [dir {:keys [data-bytes]}]
+  {:has-brick-dir? (or (< 0 data-bytes)
+                       "Does not have data in a \"/brick\" directory.")
    :has-dvc-config? (or (fs/exists? (fs/path dir ".dvc" "config"))
                         "Does not have a \"/.dvc/config\" file.")
    :has-dvc-lock? (or (fs/exists? (fs/path dir "dvc.lock"))
@@ -39,3 +52,24 @@
                       "Does not have a \"/dvc.yaml\" file.")
    :has-readme? (or (fs/exists? (fs/path dir "README.md"))
                     "Does not have a \"README.md\" file.")})
+
+(defn brick-info
+  "Returns a map of brick info. Only returns :dir and :is-brick? if the repo
+   does not appear to be a brick.
+
+   ```
+   {:data-bytes
+    :dir
+    :health-git
+    :is-brick?}
+   ```"
+  [dir]
+  (let [is-brick? (brick-dir? dir)
+        brick-info {:dir dir
+                    :is-brick? is-brick?}]
+    (if-not is-brick?
+      brick-info
+      (let [brick-info (assoc
+                        brick-info
+                        :data-bytes (brick-data-bytes dir))]
+        (assoc brick-info :health-git (brick-health-git dir brick-info))))))

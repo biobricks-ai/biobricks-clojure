@@ -2,6 +2,7 @@
   (:require #?(:clj [babashka.fs :as fs])
             #?(:clj [biobricks.brick-repo.ifc :as brick-repo])
             #?(:clj [biobricks.github.ifc :as github])
+            #?(:clj [clj-commons.humanize :as humanize])
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
             [hyperfiddle.electric :as e]
@@ -22,13 +23,7 @@
                  dir (if (fs/exists? path)
                        path
                        (brick-repo/clone "bricks" clone_url))
-                 is-brick? (brick-repo/brick-dir? dir)
-                 brick-info {:dir dir
-                             :is-brick? is-brick?}
-                 brick-info (if-not is-brick?
-                              brick-info
-                              (assoc brick-info
-                                     :brick-health-git (brick-repo/brick-health-git dir)))]
+                 brick-info (brick-repo/brick-info dir)]
              (swap! !repos assoc-in [url :brick-info] brick-info)))))
      #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
      (defonce repo-puller
@@ -44,29 +39,32 @@
 (e/defn Repo
   [{:as repo
     :keys [description html_url name]
-    {:keys [brick-health-git]} :brick-info}]
+    {:keys [data-bytes health-git]} :brick-info}]
   (dom/div
    (dom/props {:class "repo-card"})
    (dom/h3
     (dom/a
      (dom/props {:href html_url})
      (dom/text name)))
+   (when (some-> data-bytes pos?)
+     (dom/div
+      (dom/text (e/server (humanize/filesize data-bytes)))))
    (dom/div
     (cond
-      (every? true? (vals brick-health-git))
+      (empty? health-git)
+      (dom/text "Waiting on health check")
+
+      (every? true? (vals health-git))
       (dom/text "✓ Healthy")
 
-      (seq brick-health-git)
-      (let [fails (me/filter-vals (comp not true?) brick-health-git)]
+      :else
+      (let [fails (me/filter-vals (comp not true?) health-git)]
         (dom/details
          (dom/summary
           (dom/text (count fails) " checks failed"))
          (dom/ul
           (e/for [[_ v] fails]
-            (dom/li (dom/text v))))))
-
-      :else
-      (dom/text "Waiting on health check")))
+            (dom/li (dom/text v))))))))
    (dom/p
     (dom/text description))
    (ElementData. repo)))

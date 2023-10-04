@@ -53,8 +53,10 @@
     (yaml/parse-stream rdr)))
 
 (defn- brick-data-file-specs
-  "Returns a seq of {:path :md5 :size :nfiles} maps for
-   files in brick/."
+  "Returns a seq of {:hash :path :md5 :size :nfiles} maps for
+   files in brick/.
+
+   Files created prior to DVC 3.0 don't have a :hash entry."
   [dir]
   (let [lock (brick-lock dir)]
     (->> lock :stages vals
@@ -90,7 +92,7 @@
   (let [core-remote (get config "core.remote")]
     (get config (str "remote." core-remote ".url"))))
 
-(defn- download-url
+(defn download-url
   "Returns the download url for the given md5 hash.
 
    Usage:
@@ -98,15 +100,17 @@
    (download-url (brick-config \"bricks/zinc\") \"7eb3a14caf5b488296355129862d62d0.dir\")
 
    => \"https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir\""
-  [config md5]
+  [config md5 & {:keys [old-cache-location?]}]
   (if-let [remote-base (default-remote config)]
-    (str remote-base "/" (subs md5 0 2) "/" (subs md5 2))
+    (str remote-base
+         (if old-cache-location? "/" "/files/md5/")
+         (subs md5 0 2) "/" (subs md5 2))
     (throw (ex-info "No URL for default remote" {:config config :md5 md5}))))
 
 (defn- list-dir
   "Returns a seq of {:md5 :relpath}"
-  [config md5]
-  (-> (download-url config md5)
+  [config md5 & {:keys [old-cache-location?]}]
+  (-> (download-url config md5 :old-cache-location? old-cache-location?)
       (hc/get {:as :stream
                :headers {"Accept" "application/json"}})
       :body
@@ -122,9 +126,9 @@
         file-specs (brick-data-file-specs dir)]
     (->> file-specs
          (mapcat
-          (fn [{:keys [md5 path]}]
+          (fn [{:keys [hash md5 path]}]
             (if (str/ends-with? md5 ".dir")
-              (map :relpath (list-dir config md5))
+              (map :relpath (list-dir config md5 :old-cache-location? (not hash)))
               [(->> path fs/components rest (apply fs/path) str)]))))))
 
 (defn brick-data-file-extensions
@@ -155,5 +159,8 @@
                         brick-info
                         :data-bytes (brick-data-bytes dir))]
         (assoc brick-info
-               :file-extensions (try (brick-data-file-extensions dir) (catch Exception _))
+               :file-extensions (try (brick-data-file-extensions dir)
+                                     (catch Exception e
+                                       (when (not= "status: 404" (ex-message e))
+                                         (throw e))))
                :health-git (brick-health-git dir brick-info))))))

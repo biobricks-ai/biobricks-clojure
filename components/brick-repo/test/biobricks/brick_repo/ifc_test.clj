@@ -7,7 +7,8 @@
 (deftest test-brick-config
   (fs/with-temp-dir [dir {:prefix "biobricks-test"}]
     @(p/process
-      {:dir (fs/file dir)}
+      {:dir (fs/file dir)
+       :extra-env {"DVC_NO_ANALYTICS" "1"}}
       "dvc" "init" "--no-scm")
     (fs/create-dirs (fs/path dir ".dvc"))
     (spit (fs/file dir ".dvc" "config")

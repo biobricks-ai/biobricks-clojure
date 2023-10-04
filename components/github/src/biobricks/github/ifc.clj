@@ -11,7 +11,6 @@
                   (merge
                    {:headers
                     {"Accept" "application/vnd.github+json"
-                     "Authorization" "Bearer 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"
                      "User-Agent" "Hato"
                      "X-GitHub-Api-Version" "2022-11-28"}
                     :as :stream}

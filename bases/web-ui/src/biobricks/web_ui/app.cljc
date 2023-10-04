@@ -39,7 +39,7 @@
 (e/defn Repo
   [{:as repo
     :keys [description html_url name updated_at]
-    {:keys [data-bytes health-git]} :brick-info}]
+    {:keys [data-bytes file-extensions health-git]} :brick-info}]
   (dom/div
    (dom/props {:class "repo-card"})
    (dom/h3
@@ -71,6 +71,12 @@
     (dom/text
      "Updated "
      (e/server (humanize/datetime (github/parse-datetime updated_at)))))
+   (dom/div
+    (dom/props {:class "repo-card-badges"})
+    (e/for [ext (sort file-extensions)]
+      (dom/div
+       (dom/props {:class "repo-card-badge"})
+       (dom/text ext))))
    (ElementData. repo)))
 
 (e/defn Repos [repos]

@@ -1,8 +1,11 @@
 (ns biobricks.brick-repo.ifc
   (:require [babashka.fs :as fs]
             [biobricks.process.ifc :as p]
+            [clj-yaml.core :as yaml]
             [clojure.data.json :as json]
-            [clojure.string :as str]))
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [hato.client :as hc]))
 
 (defn clone
   "Clones a git repo into dir.
@@ -43,17 +46,29 @@
        (map #(str/split % #"="))
        (into {})))
 
+(defn brick-lock
+  "Returns the parsed data from dvc.lock."
+  [dir]
+  (with-open [rdr (io/reader (fs/file dir "dvc.lock"))]
+    (yaml/parse-stream rdr)))
+
+(defn- brick-data-file-specs
+  "Returns a seq of {:path :md5 :size :nfiles} maps for
+   files in brick/."
+  [dir]
+  (let [lock (brick-lock dir)]
+    (->> lock :stages vals
+         (mapcat :outs)
+         (keep
+          (fn [{:as m :keys [path]}]
+            (when (or (= "brick" path) (str/starts-with? path "brick/"))
+              m))))))
+
 (defn brick-data-bytes
   "Returns the size of the brick data in bytes."
   [dir]
-  (->> @(p/process
-         {:dir (fs/file dir) :err :string :out :string}
-         "dvc" "list" "." "--json")
-       :out
-       json/read-str
-       (keep (fn [{:strs [path size]}]
-               (when (or (= "brick" path) (str/starts-with? path "brick/"))
-                 size)))
+  (->> (brick-data-file-specs dir)
+       (map :size)
        (reduce + 0)))
 
 (defn brick-health-git
@@ -71,32 +86,11 @@
    :has-readme? (or (fs/exists? (fs/path dir "README.md"))
                     "Does not have a \"README.md\" file.")})
 
-(defn brick-info
-  "Returns a map of brick info. Only returns :dir and :is-brick? if the repo
-   does not appear to be a brick.
-
-   ```
-   {:data-bytes
-    :dir
-    :health-git
-    :is-brick?}
-   ```"
-  [dir]
-  (let [is-brick? (brick-dir? dir)
-        brick-info {:dir dir
-                    :is-brick? is-brick?}]
-    (if-not is-brick?
-      brick-info
-      (let [brick-info (assoc
-                        brick-info
-                        :data-bytes (brick-data-bytes dir))]
-        (assoc brick-info :health-git (brick-health-git dir brick-info))))))
-
 (defn- default-remote [config]
   (let [core-remote (get config "core.remote")]
     (get config (str "remote." core-remote ".url"))))
 
-(defn download-url
+(defn- download-url
   "Returns the download url for the given md5 hash.
 
    Usage:
@@ -110,3 +104,55 @@
       (str remote-base "/" (subs md5 0 2) "/" (subs md5 2))
       (str remote-base "/files/md5/" (subs md5 0 2) "/" (subs md5 2)))
     (throw (ex-info "No URL for default remote" {:config config :md5 md5}))))
+
+(defn- list-dir
+  "Returns a seq of {:md5 :relpath}"
+  [config md5]
+  (-> (download-url config md5)
+      (hc/get {:as :stream
+               :headers {"Accept" "application/json"}})
+      :body
+      io/reader
+      (json/read {:key-fn keyword})))
+
+(defn- brick-data-file-paths
+  "Returns a seq of the brick data file paths.
+
+   File paths are relative to the \"brick/\" dir."
+  [dir]
+  (let [config (brick-config dir)
+        file-specs (brick-data-file-specs dir)]
+    (->> file-specs
+         (mapcat #(list-dir config (:md5 %)))
+         (map :relpath))))
+
+(defn brick-data-file-extensions
+  "Returns the set of file extensions in the brick data."
+  [dir]
+  (->> dir
+       brick-data-file-paths
+       (reduce #(conj % (fs/extension %2)) #{})))
+
+(defn brick-info
+  "Returns a map of brick info. Only returns :dir and :is-brick? if the repo
+   does not appear to be a brick.
+
+   ```
+   {:data-bytes
+    :dir
+    :file-extensions
+    :health-git
+    :is-brick?}
+   ```"
+  [dir]
+  (let [is-brick? (brick-dir? dir)
+        brick-info {:dir dir
+                    :is-brick? is-brick?}]
+    (if-not is-brick?
+      brick-info
+      (let [brick-info (assoc
+                        brick-info
+                        :data-bytes (brick-data-bytes dir))]
+        (assoc brick-info
+               :file-extensions (try (brick-data-file-extensions dir) (catch Exception _))
+               :health-git (brick-health-git dir brick-info))))))

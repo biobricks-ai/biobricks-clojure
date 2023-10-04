@@ -23,6 +23,26 @@
   [dir]
   (fs/exists? (fs/path dir "dvc.yaml")))
 
+(defn brick-config
+  "Returns the brick config as a map.
+
+   Example:
+   `(brick-config \"bricks/zinc\")`
+
+   ```
+   {\"remote.biobricks.ai.url\" \"https://ins-dvc.s3.amazonaws.com/insdvc\",
+    \"remote.s3.biobricks.ai.url\" \"s3://ins-dvc/insdvc\",
+    \"core.remote\" \"biobricks.ai\"}
+   ```"
+  [dir]
+  (->> @(p/process
+         {:dir (fs/file dir) :err :string :out :string}
+         "dvc" "config" "-l" "--project")
+       :out
+       str/split-lines
+       (map #(str/split % #"="))
+       (into {})))
+
 (defn brick-data-bytes
   "Returns the size of the brick data in bytes."
   [dir]

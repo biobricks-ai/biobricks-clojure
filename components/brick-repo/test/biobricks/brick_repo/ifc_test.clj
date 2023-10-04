@@ -25,3 +25,12 @@
     (is (false? (brick-repo/brick-dir? (fs/path dir "biobricks-issues"))))
     (brick-repo/clone (fs/file dir) "https://github.com/biobricks-ai/hgnc.git")
     (is (true? (brick-repo/brick-dir? (fs/path dir "hgnc"))))))
+
+(deftest test-download-url
+  (let [config {"core.remote" "biobricks.ai"
+                "remote.biobricks.ai.url" "https://ins-dvc.s3.amazonaws.com/insdvc"}]
+    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/files/md5/00/044973831d9a3bbe307dc46f436451"
+           (brick-repo/download-url config "00044973831d9a3bbe307dc46f436451"))
+        "File download URLs work")
+    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir" (brick-repo/download-url config "7eb3a14caf5b488296355129862d62d0.dir"))
+        "Directory download URLs work")))

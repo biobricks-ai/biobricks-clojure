@@ -91,3 +91,22 @@
                         brick-info
                         :data-bytes (brick-data-bytes dir))]
         (assoc brick-info :health-git (brick-health-git dir brick-info))))))
+
+(defn- default-remote [config]
+  (let [core-remote (get config "core.remote")]
+    (get config (str "remote." core-remote ".url"))))
+
+(defn download-url
+  "Returns the download url for the given md5 hash.
+
+   Usage:
+   ```
+   (download-url (brick-config \"bricks/zinc\") \"7eb3a14caf5b488296355129862d62d0.dir\")
+
+   => \"https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir\""
+  [config md5]
+  (if-let [remote-base (default-remote config)]
+    (if (str/ends-with? md5 ".dir")
+      (str remote-base "/" (subs md5 0 2) "/" (subs md5 2))
+      (str remote-base "/files/md5/" (subs md5 0 2) "/" (subs md5 2)))
+    (throw (ex-info "No URL for default remote" {:config config :md5 md5}))))

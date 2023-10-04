@@ -1,9 +1,7 @@
 (ns biobricks.brick-repo.ifc
   (:require [babashka.fs :as fs]
             [biobricks.process.ifc :as p]
-            [clj-yaml.core :as yaml]
             [clojure.data.json :as json]
-            [clojure.java.io :as io]
             [clojure.string :as str]))
 
 (defn clone

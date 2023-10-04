@@ -8,7 +8,9 @@
   (fs/with-temp-dir [dir {:prefix "biobricks-test"}]
     @(p/process
       {:dir (fs/file dir)
-       :extra-env {"DVC_NO_ANALYTICS" "1"}}
+       :err :string
+       :extra-env {"DVC_NO_ANALYTICS" "1"}
+       :out :string}
       "dvc" "init" "--no-scm")
     (fs/create-dirs (fs/path dir ".dvc"))
     (spit (fs/file dir ".dvc" "config")

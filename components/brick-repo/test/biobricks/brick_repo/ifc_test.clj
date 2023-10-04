@@ -8,7 +8,7 @@
   (fs/with-temp-dir [dir {:prefix "biobricks-test"}]
     @(p/process
       {:dir (fs/file dir)}
-      "dvc" "init")
+      "dvc" "init" "--no-scm")
     (fs/create-dirs (fs/path dir ".dvc"))
     (spit (fs/file dir ".dvc" "config")
           "[core]\n  remote = biobricks.ai\n['remote \"biobricks.ai\"']\n  url = https://ins-dvc.s3.amazonaws.com/insdvc\n")
@@ -21,7 +21,6 @@
 
 (deftest test-clone
   (fs/with-temp-dir [dir {:prefix "biobricks-test"}]
-    (is (nil? dir))
     (brick-repo/clone (fs/file dir) "https://github.com/biobricks-ai/biobricks-issues.git")
     (is (false? (brick-repo/brick-dir? (fs/path dir "biobricks-issues"))))
     (brick-repo/clone (fs/file dir) "https://github.com/biobricks-ai/hgnc.git")

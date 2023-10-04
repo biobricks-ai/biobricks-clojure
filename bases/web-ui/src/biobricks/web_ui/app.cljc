@@ -61,7 +61,7 @@
       (let [fails (me/filter-vals (comp not true?) health-git)]
         (dom/details
          (dom/summary
-          (dom/text (count fails) " checks failed"))
+          (dom/text "✗ " (count fails) " checks failed"))
          (dom/ul
           (e/for [[_ v] fails]
             (dom/li (dom/text v))))))))

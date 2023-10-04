@@ -32,8 +32,9 @@
 (deftest test-download-url
   (let [config {"core.remote" "biobricks.ai"
                 "remote.biobricks.ai.url" "https://ins-dvc.s3.amazonaws.com/insdvc"}]
-    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/files/md5/00/044973831d9a3bbe307dc46f436451"
-           (brick-repo/download-url config "00044973831d9a3bbe307dc46f436451"))
+    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/00/044973831d9a3bbe307dc46f436451"
+           (@#'brick-repo/download-url config "00044973831d9a3bbe307dc46f436451"))
         "File download URLs work")
-    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir" (brick-repo/download-url config "7eb3a14caf5b488296355129862d62d0.dir"))
+    (is (= "https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir"
+           (@#'brick-repo/download-url config "7eb3a14caf5b488296355129862d62d0.dir"))
         "Directory download URLs work")))

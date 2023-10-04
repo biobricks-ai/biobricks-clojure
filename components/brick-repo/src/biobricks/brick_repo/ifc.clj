@@ -100,9 +100,7 @@
    => \"https://ins-dvc.s3.amazonaws.com/insdvc/7e/b3a14caf5b488296355129862d62d0.dir\""
   [config md5]
   (if-let [remote-base (default-remote config)]
-    (if (str/ends-with? md5 ".dir")
-      (str remote-base "/" (subs md5 0 2) "/" (subs md5 2))
-      (str remote-base "/files/md5/" (subs md5 0 2) "/" (subs md5 2)))
+    (str remote-base "/" (subs md5 0 2) "/" (subs md5 2))
     (throw (ex-info "No URL for default remote" {:config config :md5 md5}))))
 
 (defn- list-dir
@@ -123,8 +121,11 @@
   (let [config (brick-config dir)
         file-specs (brick-data-file-specs dir)]
     (->> file-specs
-         (mapcat #(list-dir config (:md5 %)))
-         (map :relpath))))
+         (mapcat
+          (fn [{:keys [md5 path]}]
+            (if (str/ends-with? md5 ".dir")
+              (map :relpath (list-dir config md5))
+              [(->> path fs/components rest (apply fs/path) str)]))))))
 
 (defn brick-data-file-extensions
   "Returns the set of file extensions in the brick data."

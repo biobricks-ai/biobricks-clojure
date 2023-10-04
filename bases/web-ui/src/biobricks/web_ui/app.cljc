@@ -31,6 +31,9 @@
          (.setDaemon true)
          .start))))
 
+#?(:cljs (defonce !ui-settings (atom {:filter-opts #{} :sort-by-opt "recently-updated"})))
+(e/def ui-settings (e/client (e/watch !ui-settings)))
+
 (e/defn ElementData [data]
   (dom/details
    (dom/summary (dom/text "clj"))
@@ -84,13 +87,35 @@
    (e/for [repo repos]
      (Repo. repo))))
 
+(def sort-options
+  {"size" ["Size" #(- (get-in % [:brick-info :data-bytes]))]
+   "name" ["Name" :name]
+   "recently-updated" ["Recently Updated" :updated_at reverse]})
+
+(e/defn SortFilterControls [{:keys [sort-by-opt]}]
+  (dom/select
+   (dom/on
+    "change"
+    (e/fn [e]
+      (e/client
+       (swap! !ui-settings assoc :sort-by-opt (-> e .-target .-value)))))
+   (e/for [[k [label]] sort-options]
+     (dom/option
+      (dom/props {:selected (= sort-by-opt k)
+                  :value k})
+      (dom/text label)))))
+
 (e/defn App []
-  (e/server
-   (let [repos (->> repos vals
-                    (sort-by :name)
-                    (filter (comp :is-brick? :brick-info)))]
-     (e/client
-      (dom/link
-       (dom/props {:rel "stylesheet" :href "/css/app.css"}))
-      (dom/div
-       (Repos. repos))))))
+  (e/client
+   (let [{:keys [sort-by-opt]} ui-settings
+         repos (e/server
+                (let [[_ f g] (sort-options sort-by-opt)]
+                  (->> repos vals
+                       (filter (comp :is-brick? :brick-info))
+                       (sort-by f)
+                       ((or g identity)))))]
+     (dom/link
+      (dom/props {:rel "stylesheet" :href "/css/app.css"}))
+     (SortFilterControls. ui-settings)
+     (dom/div
+      (Repos. repos)))))

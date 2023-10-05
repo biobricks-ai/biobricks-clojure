@@ -1,14 +1,20 @@
 (ns biobricks.web-ui.app
   (:require #?(:clj [babashka.fs :as fs])
+            #?(:clj [biobricks.brick-db.ifc :as brick-db])
             #?(:clj [biobricks.brick-repo.ifc :as brick-repo])
             #?(:clj [biobricks.github.ifc :as github])
             #?(:clj [clj-commons.humanize :as humanize])
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
+            #?(:clj [datalevin.core :as dtlv])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
             [medley.core :as me]))
+
+(e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.api/system))))
+;; Used to trigger queries on db change
+(e/def datalevin-db (e/server (e/watch (-> system :donut.system/instances :web-ui :app :datalevin-conn))))
 
 #?(:clj (defonce !repos (atom (reduce #(assoc % (:url %2) %2) {} (github/list-org-repos "biobricks-ai")))))
 (e/def repos (e/server (e/watch !repos)))
@@ -37,10 +43,10 @@
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
-(e/defn ElementData [data]
+(e/defn ElementData [label s]
   (dom/details
-   (dom/summary (dom/text "clj"))
-   (dom/text (pprint-str data))))
+   (dom/summary (dom/text label))
+   (dom/pre (dom/text s))))
 
 (e/defn Repo
   [{:as repo
@@ -76,14 +82,14 @@
    (dom/p
     (dom/text
      "Updated "
-     (e/server (humanize/datetime (github/parse-datetime updated_at)))))
+     (e/server (humanize/datetime (github/parse-localdatetime updated_at)))))
    (dom/div
     (dom/props {:class "repo-card-badges"})
     (e/for [ext (sort file-extensions)]
       (dom/div
        (dom/props {:class "repo-card-badge"})
        (dom/text ext))))
-   (ElementData. repo)))
+   (ElementData. "repo" (pprint-str repo))))
 
 (e/defn Repos [repos]
   (dom/div
@@ -154,7 +160,9 @@
 
 (e/defn App []
   (e/server
-   (let [{:keys [filter-opts page sort-by-opt]} (e/client ui-settings)
+   (let [{:as component :keys [datalevin-conn]}
+         #__ (-> system :donut.system/instances :web-ui :app)
+         {:keys [filter-opts page sort-by-opt]} (e/client ui-settings)
          filter-preds (mapv (comp second filter-options) filter-opts)
          filter-f #(loop [[pred & more] filter-preds]
                      (cond
@@ -175,6 +183,14 @@
      (e/client
       (dom/link
        (dom/props {:rel "stylesheet" :href "/css/app.css"}))
+      (ElementData. "component" (e/server
+                                 (when datalevin-db
+                                   (pprint-str component))))
+      (ElementData. "schema" (e/server (when datalevin-db
+                                         (pprint-str (into (sorted-map) (dtlv/schema datalevin-conn))))))
+      (ElementData. "q" (e/server (pprint-str (dtlv/q '[:find (pull ?e [*]) :where [?e :git-repo/github-id]]
+                                                      datalevin-db))))
+      (ElementData. "ui-settings" (pprint-str ui-settings))
       (SortFilterControls. ui-settings)
       (Repos. repos-on-page)
       (PageSelector. page num-pages)))))

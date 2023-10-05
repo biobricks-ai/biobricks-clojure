@@ -1,6 +1,7 @@
 {:paths ["development"],
  :deps
- {poly/brick-repo {:local/root "components/brick-repo"}
+ {poly/brick-db {:local/root "components/brick-db"}
+  poly/brick-repo {:local/root "components/brick-repo"}
   poly/datalevin {:local/root "components/datalevin"}
   poly/electric-jetty {:local/root "components/electric-jetty"}
   poly/github {:local/root "components/github"}

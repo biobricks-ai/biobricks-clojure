@@ -2,7 +2,8 @@
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
             [hato.client :as hc])
-  (:import [java.time LocalDateTime]
+  (:import [java.util Date]
+           [java.time LocalDateTime ZoneId]
            [java.time.format DateTimeFormatter]))
 
 (defn get-url [url & [opts]]
@@ -32,9 +33,22 @@
       (when (= per-page (count results))
         (list-org-repos org-name (inc page-num)))))))
 
-(defn parse-datetime
+(defn parse-localdatetime
   "Parse a string in ISO Date/Time format to a java.time.LocalDateTime.
 
-   Usage: `(parse-datetime \"2023-03-17T19:08:13Z\")`"
+   Usage: `(parse-localdatetime \"2023-03-17T19:08:13Z\")`"
   [s]
   (LocalDateTime/parse s DateTimeFormatter/ISO_DATE_TIME))
+
+(defn localdatetime->date [ldt]
+  (-> ldt
+      (.atZone (ZoneId/systemDefault))
+      .toInstant
+      Date/from))
+
+(defn parse-date
+  "Parse a string in ISO Date/Time format to a java.util.Date.
+
+  Usage: `(parse-date \"2023-03-17T19:08:13Z\")`"
+  [s]
+  (localdatetime->date (parse-localdatetime s)))

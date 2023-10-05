@@ -43,3 +43,23 @@
   "Calls `(signal! system :donut.system/stop)`."
   [system]
   (signal! system :donut.system/stop))
+
+(defn config-component
+  "Returns a component whose instance is the same as its config,
+   but with refs resolved. The instance is nil when stopped."
+  [config]
+  {::ds/config config
+   ::ds/start (fn [{::ds/keys [config]}] config)
+   ::ds/stop (fn [_] nil)})
+
+(defn thunk-component
+  "Returns a component that calls a thunk on start and sets the return
+   value as the instance.
+
+   Useful for loading configuration data."
+  [f]
+  {::ds/config {:f f}
+   ::ds/start
+   (fn [{::ds/keys [instance] {:keys [f]} ::ds/config}]
+     (or instance (f)))
+   ::ds/stop (fn [_] nil)})

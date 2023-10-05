@@ -1,0 +1,13 @@
+{:biobrick/checked-at {:db/valueType :db.type/instant}
+ :biobrick/data-bytes {:db/valueType :db.type/long}
+ :biobrick/file-extension {:db/valueType :db.type/string
+                           :db/cardinality :db.cardinality/many}
+
+ :git-repo/checked-at {:db/valueType :db.type/instant}
+ :git-repo/created-at {:db/valueType :db.type/instant}
+ :git-repo/full-name {:db/valueType :db.type/string}
+ :git-repo/github-id {:db/valueType :db.type/long
+                      :db/unique :db.unique/identity}
+ :git-repo/is-biobrick? {:db/valueType :db.type/boolean}
+ :git-repo/html-url {:db/valueType :db.type/string}
+ :git-repo/updated-at {:db/valueType :db.type/instant}}

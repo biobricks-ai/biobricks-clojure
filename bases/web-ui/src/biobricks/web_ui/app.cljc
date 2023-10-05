@@ -33,6 +33,7 @@
 
 #?(:cljs (defonce !ui-settings
            (atom {:filter-opts #{"healthy" "unhealthy"}
+                  :page 1
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
@@ -103,13 +104,17 @@
    "name" ["Name" :name]
    "recently-updated" ["Recently Updated" :updated_at reverse]})
 
+(defn update-ui-settings! [m f & args]
+  (as-> (assoc m :page 1) $
+    (apply f $ args)))
+
 (e/defn SortFilterControls [{:keys [sort-by-opt]}]
   (dom/select
    (dom/on
     "change"
     (e/fn [e]
       (e/client
-       (swap! !ui-settings assoc :sort-by-opt (-> e .-target .-value)))))
+       (swap! !ui-settings update-ui-settings! assoc :sort-by-opt (-> e .-target .-value)))))
    (e/for [[k [label]] sort-options]
      (dom/option
       (dom/props {:selected (= sort-by-opt k)
@@ -126,15 +131,30 @@
             (e/client
              (let [v (-> e .-target .-checked)
                    f (if v conj disj)]
-               (swap! !ui-settings update :filter-opts f k)))))
+               (swap! !ui-settings update-ui-settings! update :filter-opts f k)))))
          (dom/props {:id id :type "checkbox" :checked (contains? filter-options k)}))
         (dom/label
          (dom/props {:for id})
          (dom/text label)))))))
 
+(e/defn PageSelector [page num-pages]
+  (dom/div
+   (e/for [i (drop 1 (range (inc num-pages)))]
+     (when (not= 1 i)
+       (dom/text " | "))
+     (dom/a
+      (dom/on
+       "click"
+       (e/fn [_]
+         (e/client
+          (swap! !ui-settings assoc :page i))))
+      (when (= i page)
+        (dom/props {:style {:font-weight "bold"}}))
+      (dom/text i)))))
+
 (e/defn App []
   (e/server
-   (let [{:keys [filter-opts sort-by-opt]} (e/client ui-settings)
+   (let [{:keys [filter-opts page sort-by-opt]} (e/client ui-settings)
          filter-preds (mapv (comp second filter-options) filter-opts)
          filter-f #(loop [[pred & more] filter-preds]
                      (cond
@@ -146,10 +166,15 @@
                        (filter (comp :is-brick? :brick-info))
                        (filter filter-f)
                        (sort-by f)
-                       ((or g identity))))]
+                       ((or g identity))))
+         repos-on-page (->> repos
+                            (drop (* 10 (dec page)))
+                            (take 10))
+         num-pages (+ (quot (count repos) 10)
+                      (min 1 (mod (count repos) 10)))]
      (e/client
       (dom/link
        (dom/props {:rel "stylesheet" :href "/css/app.css"}))
       (SortFilterControls. ui-settings)
-      (dom/div
-       (Repos. repos))))))
+      (Repos. repos-on-page)
+      (PageSelector. page num-pages)))))

@@ -31,7 +31,9 @@
          (.setDaemon true)
          .start))))
 
-#?(:cljs (defonce !ui-settings (atom {:filter-opts #{} :sort-by-opt "recently-updated"})))
+#?(:cljs (defonce !ui-settings
+           (atom {:filter-opts #{"healthy" "unhealthy"}
+                  :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
 (e/defn ElementData [data]
@@ -87,6 +89,15 @@
    (e/for [repo repos]
      (Repo. repo))))
 
+(defn healthy? [repo]
+  (let [{:keys [health-git]} (:brick-info repo)]
+    (and (seq health-git)
+         (every? true? (vals health-git)))))
+
+(def filter-options
+  {"healthy" ["Healthy" healthy?]
+   "unhealthy" ["Unhealthy" (complement healthy?)]})
+
 (def sort-options
   {"size" ["Size" #(- (get-in % [:brick-info :data-bytes]))]
    "name" ["Name" :name]
@@ -103,19 +114,42 @@
      (dom/option
       (dom/props {:selected (= sort-by-opt k)
                   :value k})
-      (dom/text label)))))
+      (dom/text label))))
+  (dom/ul
+   (e/for [[k [label]] filter-options]
+     (let [id (str "SortFilterControls-filter-" k)]
+       (dom/li
+        (dom/input
+         (dom/on
+          "change"
+          (e/fn [e]
+            (e/client
+             (let [v (-> e .-target .-checked)
+                   f (if v conj disj)]
+               (swap! !ui-settings update :filter-opts f k)))))
+         (dom/props {:id id :type "checkbox" :checked (contains? filter-options k)}))
+        (dom/label
+         (dom/props {:for id})
+         (dom/text label)))))))
 
 (e/defn App []
-  (e/client
-   (let [{:keys [sort-by-opt]} ui-settings
-         repos (e/server
-                (let [[_ f g] (sort-options sort-by-opt)]
+  (e/server
+   (let [{:keys [filter-opts sort-by-opt]} (e/client ui-settings)
+         filter-preds (mapv (comp second filter-options) filter-opts)
+         filter-f #(loop [[pred & more] filter-preds]
+                     (cond
+                       (nil? pred) false
+                       (pred %) true
+                       :else (recur more)))
+         repos  (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos vals
                        (filter (comp :is-brick? :brick-info))
+                       (filter filter-f)
                        (sort-by f)
-                       ((or g identity)))))]
-     (dom/link
-      (dom/props {:rel "stylesheet" :href "/css/app.css"}))
-     (SortFilterControls. ui-settings)
-     (dom/div
-      (Repos. repos)))))
+                       ((or g identity))))]
+     (e/client
+      (dom/link
+       (dom/props {:rel "stylesheet" :href "/css/app.css"}))
+      (SortFilterControls. ui-settings)
+      (dom/div
+       (Repos. repos))))))

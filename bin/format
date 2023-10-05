@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# shellcheck disable=SC2046
+# This doesn't handle filenames with spaces, but we shouldn't have any.
+# I wasn't able to work-around this limitation.
+zprint -lfsw $(find . -type f \( -name "*.clj" -o -name "*.cljs" -o -name "*.cljc" \))

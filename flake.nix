@@ -16,6 +16,7 @@
             jdk
             nodePackages.npm
             rlwrap # Used by clj
+            zprint
           ];
         };
       });

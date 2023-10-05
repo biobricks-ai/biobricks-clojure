@@ -5,4 +5,6 @@
 (deftest test-list-org-repos
   (is (= "biobricks-ai"
          (-> (github/list-org-repos "biobricks-ai")
-             first :owner :login))))
+             first
+             :owner
+             :login))))

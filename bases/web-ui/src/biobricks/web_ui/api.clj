@@ -20,7 +20,8 @@
                       :brick-poll-interval-ms (* 1000 15),
                       :github-org-name "biobricks-ai",
                       :github-poll-interval-ms (* 1000 60 5),
-                      :maintain-disk-free-bytes (* 100 1024 1024 1024)}),
+                      :maintain-disk-free-bytes (* 100 1024 1024 1024),
+                      :pull-dvc-data? true}),
          :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),
          :local-datalevin (datalevin/local-db-component
                             {:dir "datalevin",

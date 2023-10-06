@@ -78,6 +78,26 @@
        (map :size)
        (reduce + 0)))
 
+(defn- pull-data-file-specs
+  "Returns a seq of {:hash :path :md5 :size :nfiles} maps for
+   DVC files.
+
+   Files created prior to DVC 3.0 don't have a :hash entry."
+  [dir]
+  (let [lock (brick-lock dir)]
+    (->> lock
+         :stages
+         vals
+         (mapcat :outs)
+         distinct)))
+
+(defn pull-data-bytes
+  "Returns the size of the DVC data in bytes."
+  [dir]
+  (->> (pull-data-file-specs dir)
+       (map :size)
+       (reduce + 0)))
+
 (defn brick-health-git
   "Returns the result of health checks that can be performed on the files
    stored in git (not DVC)."

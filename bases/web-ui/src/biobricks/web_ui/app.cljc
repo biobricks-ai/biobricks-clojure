@@ -1,5 +1,6 @@
 (ns biobricks.web-ui.app
-  (:require #?(:clj [clj-commons.humanize :as humanize])
+  (:require #?(:clj [biobricks.brick-db.ifc :as brick-db])
+            #?(:clj [clj-commons.humanize :as humanize])
             [clojure.edn :as edn]
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
@@ -11,13 +12,21 @@
   #?(:clj (:import [java.time LocalDateTime])))
 
 (e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.api/system))))
+#?(:clj (defn instance
+          [system]
+          (-> system
+              :donut.system/instances
+              :web-ui
+              :app)))
+#?(:clj (defn datalevin-conn
+          [system]
+          (-> system
+              instance
+              :datalevin-conn)))
+
 ;; Used to trigger queries on db change
-(e/def datalevin-db
-  (e/server (e/watch (-> system
-                         :donut.system/instances
-                         :web-ui
-                         :app
-                         :datalevin-conn))))
+(e/def datalevin-db (e/server (e/watch (datalevin-conn system))))
+
 
 #?(:clj (defonce !now (atom (LocalDateTime/now))))
 (e/def now (e/server (e/watch !now)))
@@ -43,34 +52,45 @@
 
 (e/defn Repo
   [{:as repo,
-    :biobrick/keys [data-bytes file-extension health-check-data
+    :db/keys [id],
+    :biobrick/keys [data-bytes data-pulled? file-extension health-check-data
                     health-check-failures],
     :git-repo/keys [checked-at description full-name html-url updated-at]}]
-  (dom/div
-    (dom/props {:class "repo-card"})
-    (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
-    (when (some-> data-bytes
-                  pos?)
-      (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
+  (e/client
     (dom/div
-      (cond (nil? health-check-failures) (dom/text "Waiting on health check")
-            (zero? health-check-failures) (dom/text "✓ Healthy")
-            :else (let [fails (->> health-check-data
-                                   edn/read-string
-                                   (me/filter-vals (comp not true?)))]
-                    (dom/details
-                      (dom/summary
-                        (dom/text "✗ " (count fails) " checks failed"))
-                      (dom/ul (e/for [[_ v] fails] (dom/li (dom/text v))))))))
-    (dom/p (dom/text description))
-    (dom/p (when updated-at
-             (dom/text "Updated " (e/server (date-str updated-at now)))))
-    (dom/p (when checked-at
-             (dom/text "Checked " (e/server (date-str checked-at now)))))
-    (dom/div (dom/props {:class "repo-card-badges"})
-             (e/for [ext (sort file-extension)]
-               (dom/div (dom/props {:class "repo-card-badge"}) (dom/text ext))))
-    (ElementData. "repo" (pprint-str repo))))
+      (dom/props {:class "repo-card"})
+      (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
+      (when (some-> data-bytes
+                    pos?)
+        (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
+      (dom/div
+        (cond (nil? health-check-failures) (dom/text "Waiting on health check")
+              (zero? health-check-failures) (dom/text "✓ Healthy")
+              :else (let [fails (->> health-check-data
+                                     edn/read-string
+                                     (me/filter-vals (comp not true?)))]
+                      (dom/details
+                        (dom/summary
+                          (dom/text "✗ " (count fails) " checks failed"))
+                        (dom/ul (e/for [[_ v] fails] (dom/li (dom/text v))))))))
+      (when data-pulled? (dom/div (dom/text "✓ Data pulled")))
+      (dom/p (dom/text description))
+      (dom/p (when updated-at
+               (dom/text "Updated " (e/server (date-str updated-at now)))))
+      (dom/p (when checked-at
+               (dom/text "Checked " (e/server (date-str checked-at now)))))
+      (dom/div (dom/props {:class "repo-card-badges"})
+               (e/for [ext (sort file-extension)]
+                 (dom/div (dom/props {:class "repo-card-badge"})
+                          (dom/text ext))))
+      (dom/div (dom/props {:style {:clear "left"}})
+               (ui/button (e/fn []
+                            (e/server (brick-db/check-brick-by-id (-> system
+                                                                      instance
+                                                                      :brick-db)
+                                                                  id)))
+                          (dom/text "Force brick info update")))
+      (ElementData. "repo" (pprint-str repo)))))
 
 (e/defn Repos [repos] (dom/div (e/for [repo repos] (Repo. repo))))
 
@@ -142,7 +162,7 @@
 (e/defn App
   []
   (e/server
-    (let [{:as component, :keys [datalevin-conn]}
+    (let [{:as instance, :keys [datalevin-conn]}
             #__
             (-> system
                 :donut.system/instances
@@ -170,8 +190,8 @@
       (when datalevin-db
         (e/client
           (dom/link (dom/props {:rel "stylesheet", :href "/css/app.css"}))
-          (ElementData. "component"
-                        (e/server (when datalevin-db (pprint-str component))))
+          (ElementData. "instance"
+                        (e/server (when datalevin-db (pprint-str instance))))
           (ElementData. "schema"
                         (e/server (when datalevin-db
                                     (pprint-str (into (sorted-map)

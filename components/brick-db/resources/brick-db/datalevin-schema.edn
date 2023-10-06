@@ -5,6 +5,7 @@
 
  :git-repo/checked-at {:db/valueType :db.type/instant}
  :git-repo/created-at {:db/valueType :db.type/instant}
+ :git-repo/description {:db/valueType :db.type/string}
  :git-repo/full-name {:db/valueType :db.type/string}
  :git-repo/github-id {:db/valueType :db.type/long
                       :db/unique :db.unique/identity}

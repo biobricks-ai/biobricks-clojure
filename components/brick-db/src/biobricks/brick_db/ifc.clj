@@ -5,7 +5,8 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [datalevin.core :as dtlv]
-            [donut.system :as-alias ds])
+            [donut.system :as-alias ds]
+            [medley.core :as me])
   (:import [java.io PushbackReader]))
 
 (defn datalevin-schema
@@ -35,18 +36,20 @@
             ;; If the task took longer than the interval, we just run it
             ;; right away.
             :else (recur end)))))
-
+(def github-org-name "biobricks-ai")
 (defn check-github-repos
   [{:keys [datalevin-conn github-org-name]}]
-  (doseq [{:keys [created_at full_name html_url id updated_at]}
+  (doseq [{:keys [created_at description full_name html_url id updated_at]}
             (github/list-org-repos github-org-name)]
     (dtlv/transact! datalevin-conn
-                    [#:git-repo{:checked-at (java.util.Date.),
-                                :created-at (github/parse-date created_at),
-                                :full-name full_name,
-                                :github-id id,
-                                :html-url html_url,
-                                :updated-at (github/parse-date updated_at)}])))
+                    [(->> #:git-repo{:checked-at (java.util.Date.),
+                                     :created-at (github/parse-date created_at),
+                                     :description description,
+                                     :full-name full_name,
+                                     :github-id id,
+                                     :html-url html_url,
+                                     :updated-at (github/parse-date updated_at)}
+                          (me/remove-vals nil?))])))
 
 (defn github-poller
   [{:as instance, :keys [github-poll-interval-ms]}]

@@ -15,7 +15,9 @@
   {::ds/defs
      {:brick-data
         {:brick-db (brick-db/component
-                     {:datalevin-conn (ds/local-ref [:local-datalevin :conn]),
+                     {:bricks-path "bricks",
+                      :datalevin-conn (ds/local-ref [:local-datalevin :conn]),
+                      :brick-poll-interval-ms (* 1000 60),
                       :github-org-name "biobricks-ai",
                       :github-poll-interval-ms (* 1000 60 5)}),
          :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),

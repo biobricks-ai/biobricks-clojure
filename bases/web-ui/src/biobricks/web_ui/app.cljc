@@ -1,16 +1,14 @@
 (ns biobricks.web-ui.app
-  (:require #?(:clj [babashka.fs :as fs])
-            #?(:clj [biobricks.brick-db.ifc :as brick-db])
-            #?(:clj [biobricks.brick-repo.ifc :as brick-repo])
-            #?(:clj [biobricks.github.ifc :as github])
-            #?(:clj [clj-commons.humanize :as humanize])
+  (:require #?(:clj [clj-commons.humanize :as humanize])
+            [clojure.edn :as edn]
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
             #?(:clj [datalevin.core :as dtlv])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
-            [medley.core :as me]))
+            [medley.core :as me])
+  #?(:clj (:import [java.time LocalDateTime])))
 
 (e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.api/system))))
 ;; Used to trigger queries on db change
@@ -21,26 +19,15 @@
                          :app
                          :datalevin-conn))))
 
-#?(:clj (defonce !repos
-          (atom (reduce #(assoc % (:url %2) %2)
-                  {}
-                  (github/list-org-repos "biobricks-ai")))))
-(e/def repos (e/server (e/watch !repos)))
-
-#?(:clj (do (defonce brick-lock (Object.))
-            (defn pull-repos
-              []
-              (doseq [{:keys [name clone_url url]} (vals @!repos)]
-                (locking brick-lock
-                  (let [path (fs/path "bricks" name)
-                        dir (if (fs/exists? path)
-                              path
-                              (brick-repo/clone "bricks" clone_url))
-                        brick-info (brick-repo/brick-info dir)]
-                    (swap! !repos assoc-in [url :brick-info] brick-info)))))
-            #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
-            (defonce repo-puller
-              (doto (Thread. pull-repos) (.setDaemon true) .start))))
+#?(:clj (defonce !now (atom (LocalDateTime/now))))
+(e/def now (e/server (e/watch !now)))
+#?(:clj (defonce now-thread
+          (doto (Thread. #(loop []
+                            (reset! !now (LocalDateTime/now))
+                            (Thread/sleep 1000)
+                            (recur)))
+            (.setDaemon true)
+            .start)))
 
 #?(:cljs (defonce !ui-settings
            (atom {:filter-opts #{"healthy" "unhealthy"},
@@ -48,34 +35,40 @@
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
+#?(:clj (defn date-str [date now] (humanize/datetime date :now-dt now)))
+
 (e/defn ElementData
   [label s]
   (dom/details (dom/summary (dom/text label)) (dom/pre (dom/text s))))
 
 (e/defn Repo
   [{:as repo,
-    :keys [description html_url name updated_at],
-    {:keys [data-bytes file-extensions health-git]} :brick-info}]
+    :biobrick/keys [data-bytes file-extension health-check-data
+                    health-check-failures],
+    :git-repo/keys [checked-at description full-name html-url updated-at]}]
   (dom/div
     (dom/props {:class "repo-card"})
-    (dom/h3 (dom/a (dom/props {:href html_url}) (dom/text name)))
+    (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
     (when (some-> data-bytes
                   pos?)
       (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
     (dom/div
-      (cond (empty? health-git) (dom/text "Waiting on health check")
-            (every? true? (vals health-git)) (dom/text "✓ Healthy")
-            :else (let [fails (me/filter-vals (comp not true?) health-git)]
+      (cond (nil? health-check-failures) (dom/text "Waiting on health check")
+            (zero? health-check-failures) (dom/text "✓ Healthy")
+            :else (let [fails (->> health-check-data
+                                   edn/read-string
+                                   (me/filter-vals (comp not true?)))]
                     (dom/details
                       (dom/summary
                         (dom/text "✗ " (count fails) " checks failed"))
                       (dom/ul (e/for [[_ v] fails] (dom/li (dom/text v))))))))
     (dom/p (dom/text description))
-    (dom/p (dom/text "Updated "
-                     (e/server (humanize/datetime (github/parse-localdatetime
-                                                    updated_at)))))
+    (dom/p (when updated-at
+             (dom/text "Updated " (e/server (date-str updated-at now)))))
+    (dom/p (when checked-at
+             (dom/text "Checked " (e/server (date-str checked-at now)))))
     (dom/div (dom/props {:class "repo-card-badges"})
-             (e/for [ext (sort file-extensions)]
+             (e/for [ext (sort file-extension)]
                (dom/div (dom/props {:class "repo-card-badge"}) (dom/text ext))))
     (ElementData. "repo" (pprint-str repo))))
 
@@ -83,17 +76,21 @@
 
 (defn healthy?
   [repo]
-  (let [{:keys [health-git]} (:brick-info repo)]
-    (and (seq health-git) (every? true? (vals health-git)))))
+  (boolean (some-> repo
+                   :biobrick/health-check-failures
+                   zero?)))
 
 (def filter-options
   {"healthy" ["Healthy" healthy?],
    "unhealthy" ["Unhealthy" (complement healthy?)]})
 
 (def sort-options
-  {"size" ["Size" #(- (get-in % [:brick-info :data-bytes]))],
-   "name" ["Name" :name],
-   "recently-updated" ["Recently Updated" :updated_at reverse]})
+  {"size" ["Size"
+           #(some-> %
+                    :biobrick/data-bytes
+                    -)],
+   "name" ["Name" :git-repo/full-name],
+   "recently-updated" ["Recently Updated" :git-repo/updated-at reverse]})
 
 (defn update-ui-settings!
   [m f & args]
@@ -157,31 +154,34 @@
                       (cond (nil? pred) false
                             (pred %) true
                             :else (recur more)))
+          repos (->> (dtlv/q '[:find (pull ?e [*]) :where
+                               [?e :git-repo/is-biobrick? true]]
+                             datalevin-db)
+                     (apply concat))
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
-                       vals
-                       (filter (comp :is-brick? :brick-info))
-                       (filter filter-f)
+                       (filter #(and (:git-repo/is-biobrick? %) (filter-f %)))
                        (sort-by f)
                        ((or g identity))))
           repos-on-page (->> repos
                              (drop (* 10 (dec page)))
                              (take 10))
           num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))]
-      (e/client
-        (dom/link (dom/props {:rel "stylesheet", :href "/css/app.css"}))
-        (ElementData. "component"
-                      (e/server (when datalevin-db (pprint-str component))))
-        (ElementData. "schema"
-                      (e/server (when datalevin-db
-                                  (pprint-str (into (sorted-map)
-                                                    (dtlv/schema
-                                                      datalevin-conn))))))
-        (ElementData. "q"
-                      (e/server (pprint-str (dtlv/q '[:find (pull ?e [*]) :where
-                                                      [?e :git-repo/github-id]]
-                                                    datalevin-db))))
-        (ElementData. "ui-settings" (pprint-str ui-settings))
-        (SortFilterControls. ui-settings)
-        (Repos. repos-on-page)
-        (PageSelector. page num-pages)))))
+      (when datalevin-db
+        (e/client
+          (dom/link (dom/props {:rel "stylesheet", :href "/css/app.css"}))
+          (ElementData. "component"
+                        (e/server (when datalevin-db (pprint-str component))))
+          (ElementData. "schema"
+                        (e/server (when datalevin-db
+                                    (pprint-str (into (sorted-map)
+                                                      (dtlv/schema
+                                                        datalevin-conn))))))
+          (comment
+            ;; Used for development
+            (ElementData. "query"
+                          (e/server (when datalevin-db (pprint-str repos)))))
+          (ElementData. "ui-settings" (pprint-str ui-settings))
+          (SortFilterControls. ui-settings)
+          (Repos. repos-on-page)
+          (PageSelector. page num-pages))))))

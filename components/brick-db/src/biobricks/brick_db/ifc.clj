@@ -77,8 +77,8 @@
       (when (< maintain-disk-free-bytes
                (- (get-disk-free-space dir) (brick-repo/pull-data-bytes dir)))
         (-> @(p/process {:dir (fs/file dir), :err :string, :out :string}
-                        "dvc"
-                        "pull")
+                        "dvc" "pull"
+                        "-j" "4")
             p/throw-on-error)
         (dtlv/transact! datalevin-conn
                         [{:db/id id, :biobrick/data-pulled? true}])))))

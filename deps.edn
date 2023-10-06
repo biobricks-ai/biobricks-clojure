@@ -7,6 +7,7 @@
   poly/github {:local/root "components/github"}
   poly/process {:local/root "components/process"}
   poly/sys {:local/root "components/sys"}
+  poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"}
   poly/web-ui {:local/root "bases/web-ui"}}
  :aliases
  {:antq

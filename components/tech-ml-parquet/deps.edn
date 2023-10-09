@@ -1,8 +1,4 @@
-{;; This component has no code and serves only to load the dependencies
- ;; needed for tech.ml.dataset to handle parquet files
- ;; Use tech.v3.libs.parquet
- ;; https://techascent.github.io/tech.ml.dataset/tech.v3.libs.parquet.html
- :paths []
+{:paths ["src"]
  :deps
  {techascent/tech.ml.dataset {:mvn/version "7.007"}
 

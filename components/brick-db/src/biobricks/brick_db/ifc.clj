@@ -176,7 +176,7 @@
                     (-> config
                         (assoc :brick-poller (brick-poller config)
                                :github-poller (github-poller config))))),
-   ::ds/stop (fn [{::ds/keys [instance], {:keys [github-poller]} ::ds/instance}]
+   ::ds/stop (fn [{::ds/keys [instance], {:keys [brick-poller github-poller]} ::ds/instance}]
                (when instance
                  (.interrupt brick-poller)
                  (.interrupt github-poller)

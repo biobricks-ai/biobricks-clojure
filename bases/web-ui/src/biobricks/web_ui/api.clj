@@ -6,8 +6,19 @@
             [biobricks.github.ifc :as github]
             [biobricks.sys.ifc :as sys]
             [clojure.java.io :as io]
+            [clojure.stacktrace :as st]
             [donut.system :as ds]
             [shadow.cljs.devtools.config :as shadow-config]))
+
+(defn uncaught-exception-handler
+  []
+  (proxy [Thread$UncaughtExceptionHandler] []
+    (uncaughtException [^Thread _thread ^Throwable e]
+      (println "Uncaught exception " (class e))
+      (st/print-throwable e)
+      (st/print-stack-trace e))))
+
+(Thread/setDefaultUncaughtExceptionHandler (uncaught-exception-handler))
 
 (defonce system (atom nil))
 

@@ -48,7 +48,11 @@
 
 (e/defn ElementData
   [label s]
-  (dom/details (dom/summary (dom/text label)) (dom/pre (dom/text s))))
+  (e/server (when (-> system
+                      instance
+                      :debug?)
+              (e/client (dom/details (dom/summary (dom/text label))
+                                     (dom/pre (dom/text s)))))))
 
 (e/defn Repo
   [[{:as repo,
@@ -57,8 +61,11 @@
                      health-check-failures],
      :git-repo/keys [checked-at description full-name html-url updated-at]}
     biobrick-file-ids]]
-  (let [biobrick-files (e/server (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
-        extensions (->> biobrick-files (map :biobrick-file/extension) set)]
+  (let [biobrick-files (e/server
+                         (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
+        extensions (->> biobrick-files
+                        (map :biobrick-file/extension)
+                        set)]
     (e/client
       (dom/div
         (dom/props {:class "repo-card"})
@@ -88,17 +95,22 @@
                  (e/for [ext (sort extensions)]
                    (dom/div (dom/props {:class "repo-card-badge"})
                             (dom/text ext))))
-        (dom/div (dom/props {:style {:clear "left"}})
-                 (ui/button (e/fn []
-                              (e/server (brick-db/check-brick-by-id (->
-                                                                      system
-                                                                      instance
-                                                                      :brick-db)
-                                                                    id)))
-                            (dom/text "Force brick info update")))
+        (e/server (when (-> system
+                            instance
+                            :debug?)
+                    (e/client (dom/div (dom/props {:style {:clear "left"}})
+                                       (ui/button
+                                         (e/fn []
+                                           (e/server (brick-db/check-brick-by-id
+                                                       (-> system
+                                                           instance
+                                                           :brick-db)
+                                                       id)))
+                                         (dom/text
+                                           "Force brick info update"))))))
         (ElementData. "repo" (e/server (pprint-str repo)))
         (ElementData. "biobrick-files"
-                        (e/server (pprint-str biobrick-files)))))))
+                      (e/server (pprint-str biobrick-files)))))))
 
 (e/defn Repos [repos] (dom/div (e/for [repo repos] (Repo. repo))))
 

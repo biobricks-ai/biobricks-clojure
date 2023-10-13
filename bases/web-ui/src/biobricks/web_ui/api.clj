@@ -29,7 +29,8 @@
       :web-ui {:app (sys/config-component
                       {:brick-db (ds/ref [:brick-data :brick-db]),
                        :datalevin-conn (ds/ref [:brick-data :local-datalevin
-                                                :conn])})}}})
+                                                :conn]),
+                       :debug? false})}}})
 
 ;; Technically blocking during swap! can be bad, but in this particular
 ;; case it's never a problem. Using swap! here enforces a

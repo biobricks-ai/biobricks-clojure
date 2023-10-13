@@ -3,6 +3,7 @@
             [biobricks.brick-db.ifc :as brick-db]
             [biobricks.datalevin.ifc :as datalevin]
             [biobricks.electric-jetty.ifc :as electric-jetty]
+            [biobricks.github.ifc :as github]
             [biobricks.sys.ifc :as sys]
             [clojure.java.io :as io]
             [donut.system :as ds]
@@ -20,6 +21,7 @@
                       :brick-poll-interval-ms (* 1000 15),
                       :github-org-name "biobricks-ai",
                       :github-poll-interval-ms (* 1000 60 5),
+                      :github-token (github/get-token-from-env),
                       :maintain-disk-free-bytes (* 100 1024 1024 1024),
                       :pull-dvc-data? false}),
          :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),

@@ -39,10 +39,10 @@
             :else (recur end)))))
 
 (defn check-github-repos
-  [{:keys [datalevin-conn github-org-name]}]
+  [{:keys [datalevin-conn github-org-name github-token]}]
   (doseq [{:keys [clone_url created_at description full_name html_url id
                   updated_at]}
-            (github/list-org-repos github-org-name)]
+            (github/list-org-repos {:token github-token} github-org-name)]
     (dtlv/transact! datalevin-conn
                     [(->> #:git-repo{:checked-at (java.util.Date.),
                                      :clone-url clone_url,
@@ -194,7 +194,8 @@
                     (-> config
                         (assoc :brick-poller (brick-poller config)
                                :github-poller (github-poller config))))),
-   ::ds/stop (fn [{::ds/keys [instance], {:keys [brick-poller github-poller]} ::ds/instance}]
+   ::ds/stop (fn [{::ds/keys [instance],
+                   {:keys [brick-poller github-poller]} ::ds/instance}]
                (when instance
                  (.interrupt brick-poller)
                  (.interrupt github-poller)

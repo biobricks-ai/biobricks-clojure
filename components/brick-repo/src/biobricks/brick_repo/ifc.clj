@@ -145,31 +145,6 @@
       io/reader
       (json/read {:key-fn keyword})))
 
-(defn- brick-data-file-paths
-  "Returns a seq of the brick data file paths.
-
-   File paths are relative to the \"brick/\" dir."
-  [dir]
-  (let [config (brick-config dir)
-        file-specs (brick-data-file-specs dir)]
-    (->> file-specs
-         (mapcat (fn [{:keys [hash md5 path]}]
-                   (if (str/ends-with? md5 ".dir")
-                     (map :relpath
-                       (list-dir config md5 :old-cache-location? (not hash)))
-                     [(->> path
-                           fs/components
-                           rest
-                           (apply fs/path)
-                           str)]))))))
-
-(defn brick-data-file-extensions
-  "Returns the set of file extensions in the brick data."
-  [dir]
-  (->> dir
-       brick-data-file-paths
-       (reduce #(conj % (fs/extension %2)) #{})))
-
 (defn brick-info
   "Returns a map of brick info. Only returns :dir and :is-brick? if the repo
    does not appear to be a brick.
@@ -177,7 +152,6 @@
    ```
    {:data-bytes
     :dir
-    :file-extensions
     :health-git
     :is-brick?}
    ```"
@@ -187,9 +161,4 @@
     (if-not is-brick?
       brick-info
       (let [brick-info (assoc brick-info :data-bytes (brick-data-bytes dir))]
-        (assoc brick-info
-          :file-extensions (try (brick-data-file-extensions dir)
-                                (catch Exception e
-                                  (when (not= "status: 404" (ex-message e))
-                                    (throw e))))
-          :health-git (brick-health-git dir brick-info))))))
+        (assoc brick-info :health-git (brick-health-git dir brick-info))))))

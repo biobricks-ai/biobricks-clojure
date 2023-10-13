@@ -114,7 +114,6 @@
                 (do (fs/create-dirs (fs/parent path))
                     (brick-repo/clone (fs/parent path) clone-url)))
           {:keys [data-bytes file-extensions health-git is-brick?]}
-            #__
             (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]

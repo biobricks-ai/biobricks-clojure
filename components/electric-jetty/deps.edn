@@ -1,6 +1,6 @@
-{:paths ["src"]
- :deps
- {com.hyperfiddle/electric {:mvn/version "v2-alpha-428-g22937f75"}
-  info.sunng/ring-jetty9-adapter
-  {:mvn/version "0.22.1"
-   :exclusions [org.slf4j/slf4j-api info.sunng/ring-jetty9-adapter-http3]}}}
+{:deps {com.hyperfiddle/electric {:mvn/version "v2-alpha-428-g22937f75"},
+        info.sunng/ring-jetty9-adapter
+          {:exclusions [org.slf4j/slf4j-api
+                        info.sunng/ring-jetty9-adapter-http3],
+           :mvn/version "0.22.1"}},
+ :paths ["src"]}

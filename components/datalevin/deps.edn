@@ -1,9 +1,5 @@
-{:paths ["src"]
- :deps
- {com.cognitect/transit-clj {:mvn/version "1.0.329"}
-  datalevin/datalevin {:mvn/version "0.8.20"}}
- :aliases
- {:test
-  {:extra-paths ["test"]
-   :extra-deps
-   {poly/sys {:local/root "../sys"}}}}}
+{:aliases {:test {:extra-deps {poly/sys {:local/root "../sys"}},
+                  :extra-paths ["test"]}},
+ :deps {com.cognitect/transit-clj {:mvn/version "1.0.329"},
+        datalevin/datalevin {:mvn/version "0.8.20"}},
+ :paths ["src"]}

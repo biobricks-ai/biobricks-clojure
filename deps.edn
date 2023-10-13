@@ -1,54 +1,46 @@
-{:paths ["development"],
- :deps
- {poly/brick-db {:local/root "components/brick-db"}
-  poly/brick-repo {:local/root "components/brick-repo"}
-  poly/datalevin {:local/root "components/datalevin"}
-  poly/electric-jetty {:local/root "components/electric-jetty"}
-  poly/github {:local/root "components/github"}
-  poly/process {:local/root "components/process"}
-  poly/sys {:local/root "components/sys"}
-  poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"}
-  poly/web-ui {:local/root "bases/web-ui"}}
- :aliases
- {:antq
-  {:deps
-   {com.github.liquidz/antq {:mvn/version "2.6.1121"}
-    org.slf4j/slf4j-nop {:mvn/version "2.0.9"}}
-   :main-opts ["-m" "antq.core"]}
-  :dev
-  {:extra-deps {binaryage/devtools {:mvn/version "1.0.7"}
-                thheller/shadow-cljs {:mvn/version "2.25.6"}}
-   :jvm-opts
-   ["-Xss2m" ; https://github.com/hyperfiddle/photon/issues/11
-    "-XX:-OmitStackTraceInFastThrow" ;; RCF
-    "--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
-    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
-    ]}
-  :poly
-  {:extra-deps
-   {polylith/clj-poly
-    {:deps/root "projects/poly"
-     :git/url "https://github.com/polyfy/polylith.git"
-     :sha "48d8a14d31a02cd2229d99bca094fe383d3dcace"}
-    polylith-kaocha.components/util
-    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
-     :git/tag "v0.8.2"
-     :git/sha "d1fcd40"
-     :deps/root "components/util"}
-    polylith-kaocha/kaocha-wrapper
-    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
-     :git/tag "v0.8.2"
-     :git/sha "d1fcd40"
-     :deps/root "projects/kaocha-wrapper"}
-    polylith-kaocha/test-runner
-    {:git/url "https://github.com/imrekoszo/polylith-kaocha"
-     :git/tag "v0.8.2"
-     :git/sha "d1fcd40"
-     :deps/root "projects/test-runner"}}
-   :main-opts  ["-m" "polylith.clj.core.poly-cli.core"]
-   :jvm-opts
-   ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
-    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
-    ]}
-   :test
-   {}}}
+{:aliases
+   {:antq {:deps {com.github.liquidz/antq {:mvn/version "2.6.1121"},
+                  org.slf4j/slf4j-nop {:mvn/version "2.0.9"}},
+           :main-opts ["-m" "antq.core"]},
+    :dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.7"},
+                       thheller/shadow-cljs {:mvn/version "2.25.6"}},
+          :jvm-opts ["-Xss2m" ; https://github.com/hyperfiddle/photon/issues/11
+                     "-XX:-OmitStackTraceInFastThrow" ;; RCF
+                     "--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
+                     "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
+                    ]},
+    :poly {:extra-deps
+             {polylith-kaocha.components/util
+                {:deps/root "components/util",
+                 :git/sha "d1fcd40",
+                 :git/tag "v0.8.2",
+                 :git/url "https://github.com/imrekoszo/polylith-kaocha"},
+              polylith-kaocha/kaocha-wrapper
+                {:deps/root "projects/kaocha-wrapper",
+                 :git/sha "d1fcd40",
+                 :git/tag "v0.8.2",
+                 :git/url "https://github.com/imrekoszo/polylith-kaocha"},
+              polylith-kaocha/test-runner
+                {:deps/root "projects/test-runner",
+                 :git/sha "d1fcd40",
+                 :git/tag "v0.8.2",
+                 :git/url "https://github.com/imrekoszo/polylith-kaocha"},
+              polylith/clj-poly
+                {:deps/root "projects/poly",
+                 :git/url "https://github.com/polyfy/polylith.git",
+                 :sha "48d8a14d31a02cd2229d99bca094fe383d3dcace"}},
+           :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
+                      "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
+                     ],
+           :main-opts ["-m" "polylith.clj.core.poly-cli.core"]},
+    :test {}},
+ :deps {poly/brick-db {:local/root "components/brick-db"},
+        poly/brick-repo {:local/root "components/brick-repo"},
+        poly/datalevin {:local/root "components/datalevin"},
+        poly/electric-jetty {:local/root "components/electric-jetty"},
+        poly/github {:local/root "components/github"},
+        poly/process {:local/root "components/process"},
+        poly/sys {:local/root "components/sys"},
+        poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"},
+        poly/web-ui {:local/root "bases/web-ui"}},
+ :paths ["development"]}

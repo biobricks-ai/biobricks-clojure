@@ -1,25 +1,24 @@
-{:biobrick/checked-at {:db/valueType :db.type/instant}
- :biobrick/data-bytes {:db/valueType :db.type/long}
- :biobrick/data-pulled? {:db/valueType :db.type/boolean}
- :biobrick/health-check-data {:db/valueType :db.type/string}
- :biobrick/health-check-failures {:db/valueType :db.type/long}
-
- :biobrick-file/biobrick {:db/valueType :db.type/ref} ; :git-repo/github-id
- :biobrick-file/biobrick+dvc-url {:db/valueType :db.type/tuple
-                                  :db/tupleAttrs [:biobrick-file/biobrick :biobrick-file/dvc-url]
-                                  :db/unique :db.unique/identity}
- :biobrick-file/dvc-url {:db/valueType :db.type/string}
- :biobrick-file/extension {:db/valueType :db.type/string}
- :biobrick-file/path {:db/valueType :db.type/string}
- :biobrick-file/size {:db/valueType :db.type/long}
-
- :git-repo/checked-at {:db/valueType :db.type/instant}
- :git-repo/clone-url {:db/valueType :db.type/string}
- :git-repo/created-at {:db/valueType :db.type/instant}
- :git-repo/description {:db/valueType :db.type/string}
- :git-repo/full-name {:db/valueType :db.type/string}
- :git-repo/github-id {:db/valueType :db.type/long
-                      :db/unique :db.unique/identity}
- :git-repo/is-biobrick? {:db/valueType :db.type/boolean}
- :git-repo/html-url {:db/valueType :db.type/string}
+{:biobrick/checked-at {:db/valueType :db.type/instant},
+ :biobrick/data-bytes {:db/valueType :db.type/long},
+ :biobrick/data-pulled? {:db/valueType :db.type/boolean},
+ :biobrick/health-check-data {:db/valueType :db.type/string},
+ :biobrick/health-check-failures {:db/valueType :db.type/long},
+ :biobrick-file/biobrick {:db/valueType :db.type/ref}, ; :git-repo/github-id
+ :biobrick-file/biobrick+dvc-url {:db/tupleAttrs [:biobrick-file/biobrick
+                                                  :biobrick-file/dvc-url],
+                                  :db/unique :db.unique/identity,
+                                  :db/valueType :db.type/tuple},
+ :biobrick-file/dvc-url {:db/valueType :db.type/string},
+ :biobrick-file/extension {:db/valueType :db.type/string},
+ :biobrick-file/path {:db/valueType :db.type/string},
+ :biobrick-file/size {:db/valueType :db.type/long},
+ :git-repo/checked-at {:db/valueType :db.type/instant},
+ :git-repo/clone-url {:db/valueType :db.type/string},
+ :git-repo/created-at {:db/valueType :db.type/instant},
+ :git-repo/description {:db/valueType :db.type/string},
+ :git-repo/full-name {:db/valueType :db.type/string},
+ :git-repo/github-id {:db/unique :db.unique/identity,
+                      :db/valueType :db.type/long},
+ :git-repo/is-biobrick? {:db/valueType :db.type/boolean},
+ :git-repo/html-url {:db/valueType :db.type/string},
  :git-repo/updated-at {:db/valueType :db.type/instant}}

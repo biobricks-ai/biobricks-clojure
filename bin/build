@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -eu
+
+HYPERFIDDLE_ELECTRIC_APP_VERSION=$(git describe --tags --long --always --dirty)
+clojure -X:build uberjar :jar-name "target/app.jar" :version '"'$HYPERFIDDLE_ELECTRIC_APP_VERSION'"'

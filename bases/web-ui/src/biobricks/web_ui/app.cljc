@@ -11,7 +11,7 @@
             [medley.core :as me])
   #?(:clj (:import [java.time LocalDateTime])))
 
-(e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.api/system))))
+(e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.system/system))))
 #?(:clj (defn instance
           [system]
           (-> system

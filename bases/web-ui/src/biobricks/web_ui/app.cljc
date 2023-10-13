@@ -192,10 +192,14 @@
                       (cond (nil? pred) false
                             (pred %) true
                             :else (recur more)))
-          repos (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :where
-                          [?e :git-repo/is-biobrick? true]
-                          [?file :biobrick-file/biobrick ?e]]
-                        datalevin-db)
+          repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :where
+                               [?e :git-repo/is-biobrick? true]
+                               [?file :biobrick-file/biobrick ?e]]
+                             datalevin-db)
+                     (concat (dtlv/q '[:find (pull ?e [*]) :where
+                                       [?e :git-repo/is-biobrick? true]
+                                       (not [?file :biobrick-file/biobrick ?e])]
+                                     datalevin-db)))
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
                        (filter (comp #(and (:git-repo/is-biobrick? %)

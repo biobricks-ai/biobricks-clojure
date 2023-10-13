@@ -51,46 +51,54 @@
   (dom/details (dom/summary (dom/text label)) (dom/pre (dom/text s))))
 
 (e/defn Repo
-  [{:as repo,
-    :db/keys [id],
-    :biobrick/keys [data-bytes data-pulled? file-extension health-check-data
-                    health-check-failures],
-    :git-repo/keys [checked-at description full-name html-url updated-at]}]
-  (e/client
-    (dom/div
-      (dom/props {:class "repo-card"})
-      (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
-      (when (some-> data-bytes
-                    pos?)
-        (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
+  [[{:as repo,
+     :db/keys [id],
+     :biobrick/keys [data-bytes data-pulled? health-check-data
+                     health-check-failures],
+     :git-repo/keys [checked-at description full-name html-url updated-at]}
+    biobrick-file-ids]]
+  (let [biobrick-files (e/server (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
+        extensions (->> biobrick-files (map :biobrick-file/extension) set)]
+    (e/client
       (dom/div
-        (cond (nil? health-check-failures) (dom/text "Waiting on health check")
-              (zero? health-check-failures) (dom/text "✓ Healthy")
-              :else (let [fails (->> health-check-data
-                                     edn/read-string
-                                     (me/filter-vals (comp not true?)))]
-                      (dom/details
-                        (dom/summary
-                          (dom/text "✗ " (count fails) " checks failed"))
-                        (dom/ul (e/for [[_ v] fails] (dom/li (dom/text v))))))))
-      (when data-pulled? (dom/div (dom/text "✓ Data pulled")))
-      (dom/p (dom/text description))
-      (dom/p (when updated-at
-               (dom/text "Updated " (e/server (date-str updated-at now)))))
-      (dom/p (when checked-at
-               (dom/text "Checked " (e/server (date-str checked-at now)))))
-      (dom/div (dom/props {:class "repo-card-badges"})
-               (e/for [ext (sort file-extension)]
-                 (dom/div (dom/props {:class "repo-card-badge"})
-                          (dom/text ext))))
-      (dom/div (dom/props {:style {:clear "left"}})
-               (ui/button (e/fn []
-                            (e/server (brick-db/check-brick-by-id (-> system
+        (dom/props {:class "repo-card"})
+        (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
+        (when (some-> data-bytes
+                      pos?)
+          (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
+        (dom/div (cond (nil? health-check-failures) (dom/text
+                                                      "Waiting on health check")
+                       (zero? health-check-failures) (dom/text "✓ Healthy")
+                       :else
+                         (let [fails (->> health-check-data
+                                          edn/read-string
+                                          (me/filter-vals (comp not true?)))]
+                           (dom/details
+                             (dom/summary
+                               (dom/text "✗ " (count fails) " checks failed"))
+                             (dom/ul (e/for [[_ v] fails]
+                                       (dom/li (dom/text v))))))))
+        (when data-pulled? (dom/div (dom/text "✓ Data pulled")))
+        (dom/p (dom/text description))
+        (dom/p (when updated-at
+                 (dom/text "Updated " (e/server (date-str updated-at now)))))
+        (dom/p (when checked-at
+                 (dom/text "Checked " (e/server (date-str checked-at now)))))
+        (dom/div (dom/props {:class "repo-card-badges"})
+                 (e/for [ext (sort extensions)]
+                   (dom/div (dom/props {:class "repo-card-badge"})
+                            (dom/text ext))))
+        (dom/div (dom/props {:style {:clear "left"}})
+                 (ui/button (e/fn []
+                              (e/server (brick-db/check-brick-by-id (->
+                                                                      system
                                                                       instance
                                                                       :brick-db)
-                                                                  id)))
-                          (dom/text "Force brick info update")))
-      (ElementData. "repo" (pprint-str repo)))))
+                                                                    id)))
+                            (dom/text "Force brick info update")))
+        (ElementData. "repo" (e/server (pprint-str repo)))
+        (ElementData. "biobrick-files"
+                        (e/server (pprint-str biobrick-files)))))))
 
 (e/defn Repos [repos] (dom/div (e/for [repo repos] (Repo. repo))))
 
@@ -162,26 +170,26 @@
 (e/defn App
   []
   (e/server
-    (let [{:as instance, :keys [datalevin-conn]}
-            #__
-            (-> system
-                :donut.system/instances
-                :web-ui
-                :app)
+    (let [instance (-> system
+                       :donut.system/instances
+                       :web-ui
+                       :app)
           {:keys [filter-opts page sort-by-opt]} (e/client ui-settings)
           filter-preds (mapv (comp second filter-options) filter-opts)
           filter-f #(loop [[pred & more] filter-preds]
                       (cond (nil? pred) false
                             (pred %) true
                             :else (recur more)))
-          repos (->> (dtlv/q '[:find (pull ?e [*]) :where
-                               [?e :git-repo/is-biobrick? true]]
-                             datalevin-db)
-                     (apply concat))
+          repos (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :where
+                          [?e :git-repo/is-biobrick? true]
+                          [?file :biobrick-file/biobrick ?e]]
+                        datalevin-db)
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
-                       (filter #(and (:git-repo/is-biobrick? %) (filter-f %)))
-                       (sort-by f)
+                       (filter (comp #(and (:git-repo/is-biobrick? %)
+                                           (filter-f %))
+                                     first))
+                       (sort-by (comp f first))
                        ((or g identity))))
           repos-on-page (->> repos
                              (drop (* 10 (dec page)))
@@ -196,7 +204,8 @@
                         (e/server (when datalevin-db
                                     (pprint-str (into (sorted-map)
                                                       (dtlv/schema
-                                                        datalevin-conn))))))
+                                                        (datalevin-conn
+                                                          system)))))))
           (comment
             ;; Used for development
             (ElementData. "query"

@@ -1,6 +1,7 @@
 (ns biobricks.brick-repo.ifc
   (:require [babashka.fs :as fs]
             [biobricks.process.ifc :as p]
+            [biobricks.tech-ml-parquet.ifc :as tmparquet]
             [clj-yaml.core :as yaml]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
@@ -56,7 +57,7 @@
   (with-open [rdr (io/reader (fs/file dir "dvc.lock"))]
     (yaml/parse-stream rdr)))
 
-(defn- brick-data-file-specs
+(defn brick-data-file-specs
   "Returns a seq of {:hash :path :md5 :size :nfiles} maps for
    files in brick/.
 
@@ -69,7 +70,7 @@
          (mapcat :outs)
          (keep (fn [{:as m, :keys [path]}]
                  (when (or (= "brick" path) (str/starts-with? path "brick/"))
-                   m))))))
+                   (into {} m)))))))
 
 (defn brick-data-bytes
   "Returns the size of the brick data in bytes."

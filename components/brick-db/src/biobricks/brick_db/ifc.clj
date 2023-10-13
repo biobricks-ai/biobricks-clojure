@@ -83,6 +83,24 @@
         (dtlv/transact! datalevin-conn
                         [{:db/id id, :biobrick/data-pulled? true}])))))
 
+(defn get-biobrick-file-datoms
+  [{:keys [datalevin-conn]} dir brick-id]
+  (let [brick-config (brick-repo/brick-config dir)
+        file-specs (brick-repo/brick-data-file-specs dir)]
+    (->> (for [{:keys [hash md5 path size]} file-specs
+               :let [dvc-url (brick-repo/download-url brick-config
+                                                      md5
+                                                      :old-cache-location?
+                                                      (not hash))]]
+           (when-not (str/ends-with? md5 ".dir")
+             {:biobrick-file/biobrick brick-id,
+              :biobrick-file/biobrick+dvc-url [brick-id dvc-url],
+              :biobrick-file/dvc-url dvc-url,
+              :biobrick-file/extension (fs/extension path),
+              :biobrick-file/path path,
+              :biobrick-file/size size}))
+         (filter seq))))
+
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}
    {:db/keys [id], :git-repo/keys [clone-url full-name]}]

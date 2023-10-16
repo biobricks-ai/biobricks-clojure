@@ -113,7 +113,7 @@
                     path)
                 (do (fs/create-dirs (fs/parent path))
                     (brick-repo/clone (fs/parent path) clone-url)))
-          {:keys [data-bytes file-extensions health-git is-brick?]}
+          {:keys [data-bytes health-git is-brick?]}
             (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]
@@ -129,8 +129,7 @@
                                                           (remove true?)
                                                           count),
                      :git-repo/is-biobrick? true})]
-                 (concat (for [ext file-extensions]
-                           {:db/id id, :biobrick/file-extension ext}))
+                 (concat (get-biobrick-file-datoms instance dir id))
                  (dtlv/transact! datalevin-conn))
             (future (check-brick-data instance dir id)))))))
 

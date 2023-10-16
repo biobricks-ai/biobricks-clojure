@@ -145,6 +145,21 @@
       io/reader
       (json/read {:key-fn keyword})))
 
+(defn resolve-dirs
+  "Returns a seq of file-specs with directories transformed into the
+   actual files.
+
+   Added file-specs do not have a :size key."
+  [config file-specs]
+  (mapcat (fn [{:as file-spec, :keys [hash md5 path]}]
+            (if (str/ends-with? md5 ".dir")
+              (for [{:keys [md5 relpath]}
+                      (list-dir config md5 :old-cache-location? (not hash))
+                    :let [m {:md5 md5, :path (str path relpath)}]]
+                (if hash (assoc m :hash hash) m))
+              [file-spec]))
+    file-specs))
+
 (defn brick-info
   "Returns a map of brick info. Only returns :dir and :is-brick? if the repo
    does not appear to be a brick.

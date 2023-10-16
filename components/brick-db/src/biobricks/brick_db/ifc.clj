@@ -6,6 +6,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.tools.logging.readable :as log]
             [datalevin.core :as dtlv]
             [donut.system :as-alias ds]
             [medley.core :as me])
@@ -86,19 +87,21 @@
 (defn get-biobrick-file-datoms
   [{:keys [datalevin-conn]} dir brick-id]
   (let [brick-config (brick-repo/brick-config dir)
-        file-specs (brick-repo/brick-data-file-specs dir)]
+        file-specs (->> (brick-repo/brick-data-file-specs dir)
+                        (brick-repo/resolve-dirs brick-config))]
     (->> (for [{:keys [hash md5 path size]} file-specs
                :let [dvc-url (brick-repo/download-url brick-config
                                                       md5
                                                       :old-cache-location?
                                                       (not hash))]]
            (when-not (str/ends-with? md5 ".dir")
-             {:biobrick-file/biobrick brick-id,
-              :biobrick-file/biobrick+dvc-url [brick-id dvc-url],
-              :biobrick-file/dvc-url dvc-url,
-              :biobrick-file/extension (fs/extension path),
-              :biobrick-file/path path,
-              :biobrick-file/size size}))
+             (->> {:biobrick-file/biobrick brick-id,
+                   :biobrick-file/biobrick+dvc-url [brick-id dvc-url],
+                   :biobrick-file/dvc-url dvc-url,
+                   :biobrick-file/extension (fs/extension path),
+                   :biobrick-file/path path,
+                   :biobrick-file/size size}
+                  (me/remove-vals nil?))))
          (filter seq))))
 
 (defn check-brick
@@ -113,8 +116,7 @@
                     path)
                 (do (fs/create-dirs (fs/parent path))
                     (brick-repo/clone (fs/parent path) clone-url)))
-          {:keys [data-bytes health-git is-brick?]}
-            (brick-repo/brick-info dir)]
+          {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]
              (dtlv/transact! datalevin-conn))
@@ -129,7 +131,9 @@
                                                           (remove true?)
                                                           count),
                      :git-repo/is-biobrick? true})]
-                 (concat (get-biobrick-file-datoms instance dir id))
+                 (concat (try (get-biobrick-file-datoms instance dir id)
+                              (catch Exception e
+                                (log/error "Error getting biobrick files" e))))
                  (dtlv/transact! datalevin-conn))
             (future (check-brick-data instance dir id)))))))
 

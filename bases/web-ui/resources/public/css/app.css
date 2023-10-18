@@ -1,26 +1,4 @@
-a {
-  color: #191970;
-}
-
-details {
-  clear: both;
-}
-
-.repo-card {
-  border: 1px solid #BEBFC5;
-  border-radius: 8px;
-  margin: 0.4em;
-  padding: 0.4em;
-}
-
-.repo-card-badges {
-  display: flex;
-}
-
-.repo-card-badge {
-  border: 1px solid #BEBFC5;
-  border-radius: 8px;
-  float: left;
-  margin: 0.4em;
-  padding: 0.4em;
-}
+@tailwind base;
+@tailwind components;
+@tailwind forms;
+@tailwind utilities;

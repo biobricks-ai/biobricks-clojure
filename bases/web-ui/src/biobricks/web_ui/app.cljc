@@ -54,6 +54,46 @@
               (e/client (dom/details (dom/summary (dom/text label))
                                      (dom/pre (dom/text s)))))))
 
+(e/defn StatusCircle
+  "Shows a green circle for true status, rose for false,
+   and gray for nil."
+  [status]
+  (dom/div
+    (dom/props
+      {:class (case status
+                nil "flex-none rounded-full p-1 text-gray-500 bg-gray-100/10"
+                true "flex-none rounded-full p-1 text-green-400 bg-green-400/10"
+                false
+                  "flex-none rounded-full p-1 text-rose-400 bg-rose-400/10")})
+    (dom/div (dom/props {:class "h-2 w-2 rounded-full bg-current"}))))
+
+(e/defn DotDivider
+  []
+  (dom/element :svg
+               (dom/props {:viewBox "0 0 2 2",
+                           :class "h-0.5 w-0.5 flex-none fill-gray-300"})
+               (dom/element :circle (dom/props {:cx "1", :cy "1", :r "1"}))))
+
+(e/defn RoundedBadge
+  [colors label]
+  (dom/div
+    (dom/props
+      {:class
+         (str
+           "rounded-full flex-none py-1 px-2 text-xs font-medium ring-1 ring-inset "
+           colors)})
+    (dom/text label)))
+
+(e/defn FileExtensionBadge
+  [ext]
+  (case ext
+    "hdt" (RoundedBadge. "text-amber-400 bg-amber-400/10 ring-amber-400/30"
+                         "HDT")
+    "parquet" (RoundedBadge.
+                "text-indigo-400 bg-indigo-400/10 ring-indigo-400/30"
+                "Parquet")
+    (RoundedBadge. "text-gray-400 bg-gray-400/10 ring-gray-400/30" ext)))
+
 (e/defn Repo
   [[{:as repo,
      :db/keys [id],
@@ -67,34 +107,47 @@
                         (map :biobrick-file/extension)
                         set)]
     (e/client
-      (dom/div
-        (dom/props {:class "repo-card"})
-        (dom/h3 (dom/a (dom/props {:href html-url}) (dom/text full-name)))
-        (when (some-> data-bytes
-                      pos?)
-          (dom/div (dom/text (e/server (humanize/filesize data-bytes)))))
-        (dom/div (cond (nil? health-check-failures) (dom/text
-                                                      "Waiting on health check")
-                       (zero? health-check-failures) (dom/text "✓ Healthy")
-                       :else
-                         (let [fails (->> health-check-data
-                                          edn/read-string
-                                          (me/filter-vals (comp not true?)))]
-                           (dom/details
-                             (dom/summary
-                               (dom/text "✗ " (count fails) " checks failed"))
-                             (dom/ul (e/for [[_ v] fails]
-                                       (dom/li (dom/text v))))))))
-        (when data-pulled? (dom/div (dom/text "✓ Data pulled")))
-        (dom/p (dom/text description))
-        (dom/p (when updated-at
-                 (dom/text "Updated " (e/server (date-str updated-at now)))))
-        (dom/p (when checked-at
-                 (dom/text "Checked " (e/server (date-str checked-at now)))))
-        (dom/div (dom/props {:class "repo-card-badges"})
-                 (e/for [ext (sort extensions)]
-                   (dom/div (dom/props {:class "repo-card-badge"})
-                            (dom/text ext))))
+      (dom/li
+        (dom/props
+          {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
+        (dom/div
+          (dom/props {:class "min-w-0 flex-auto"})
+          (dom/div (dom/props {:class "flex items-center gap-x-3"})
+                   (StatusCircle. (cond (pos? health-check-failures) false
+                                        (seq extensions) true))
+                   (dom/h2
+                     (dom/props
+                       {:class
+                          "min-w-0 text-sm font-semibold leading-6 text-white"})
+                     (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
+                            (dom/text full-name))))
+          (dom/div
+            (dom/props
+              {:class
+                 "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
+            (when (some-> data-bytes
+                          pos?)
+              (dom/p (dom/props {:class "whitespace-nowrap"})
+                     (dom/text (e/server (humanize/filesize data-bytes))))
+              (DotDivider.))
+            (when updated-at
+              (dom/p (dom/props {:class "whitespace-nowrap"})
+                     (dom/text "Updated "
+                               (e/server (date-str updated-at now))))))
+          #_(dom/div
+              (cond (nil? health-check-failures) (dom/text
+                                                   "Waiting on health check")
+                    (zero? health-check-failures) (dom/text "✓ Healthy")
+                    :else (let [fails (->> health-check-data
+                                           edn/read-string
+                                           (me/filter-vals (comp not true?)))]
+                            (dom/details
+                              (dom/summary
+                                (dom/text "✗ " (count fails) " checks failed"))
+                              (dom/ul (e/for [[_ v] fails]
+                                        (dom/li (dom/text v)))))))))
+        (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
         (e/server (when (-> system
                             instance
                             :debug?)
@@ -112,7 +165,10 @@
         (ElementData. "biobrick-files"
                       (e/server (pprint-str biobrick-files)))))))
 
-(e/defn Repos [repos] (dom/div (e/for [repo repos] (Repo. repo))))
+(e/defn Repos
+  [repos]
+  (dom/ul (dom/props {:role "list", :class "divide-y divide-white/5"})
+          (e/for [repo repos] (Repo. repo))))
 
 (defn healthy?
   [repo]
@@ -179,6 +235,7 @@
                     (when (= i page) (dom/props {:style {:font-weight "bold"}}))
                     (dom/text i)))))
 
+; https://tailwindui.com/components/application-ui/page-examples/home-screens#component-1cb122f657954361d2f5fce7ec641480
 (e/defn App
   []
   (e/server
@@ -213,20 +270,27 @@
           num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))]
       (when datalevin-db
         (e/client
-          (dom/link (dom/props {:rel "stylesheet", :href "/css/app.css"}))
-          (ElementData. "instance"
-                        (e/server (when datalevin-db (pprint-str instance))))
-          (ElementData. "schema"
-                        (e/server (when datalevin-db
-                                    (pprint-str (into (sorted-map)
-                                                      (dtlv/schema
-                                                        (datalevin-conn
-                                                          system)))))))
-          (comment
-            ;; Used for development
-            (ElementData. "query"
-                          (e/server (when datalevin-db (pprint-str repos)))))
-          (ElementData. "ui-settings" (pprint-str ui-settings))
-          (SortFilterControls. ui-settings)
-          (Repos. repos-on-page)
-          (PageSelector. page num-pages))))))
+          (dom/link (dom/props {:rel "stylesheet", :href "/css/compiled.css"}))
+          (dom/div
+            (dom/div (dom/props {:class "xl:pl-72"})
+                     (dom/main
+                       (dom/props {:clas "lg:pr-96"})
+                       (ElementData. "instance"
+                                     (e/server (when datalevin-db
+                                                 (pprint-str instance))))
+                       (ElementData. "schema"
+                                     (e/server (when datalevin-db
+                                                 (pprint-str (into
+                                                               (sorted-map)
+                                                               (dtlv/schema
+                                                                 (datalevin-conn
+                                                                   system)))))))
+                       (comment
+                         ;; Used for development
+                         (ElementData. "query"
+                                       (e/server (when datalevin-db
+                                                   (pprint-str repos)))))
+                       (ElementData. "ui-settings" (pprint-str ui-settings))
+                       (SortFilterControls. ui-settings)
+                       (Repos. repos-on-page)
+                       (PageSelector. page num-pages)))))))))

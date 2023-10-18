@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+while :; do
+    tailwindcss -i ./bases/web-ui/resources/public/css/app.css -o ./bases/web-ui/resources/public/css/compiled.css --watch
+    echo "Tailwind CSS compilation failed, retrying in 5 seconds..."
+    sleep 5
+done

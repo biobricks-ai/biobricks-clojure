@@ -202,29 +202,31 @@
               (e/for [[k [label]] sort-options]
                 (dom/option (dom/props {:selected (= sort-by-opt k), :value k})
                             (dom/text label))))
-  (dom/ul
-    (e/for [[k [label]] filter-options]
-      (let [id (str "SortFilterControls-filter-" k)]
-        (dom/li (dom/input (dom/on "change"
-                                   (e/fn [e]
-                                     (e/client (let [v (-> e
-                                                           .-target
-                                                           .-checked)
-                                                     f (if v conj disj)]
-                                                 (swap! !ui-settings
-                                                   update-ui-settings!
-                                                   update
-                                                   :filter-opts
-                                                   f
-                                                   k)))))
-                           (dom/props {:id id,
-                                       :type "checkbox",
-                                       :checked (contains? filter-options k)}))
-                (dom/label (dom/props {:for id}) (dom/text label)))))))
+  (dom/ul (dom/props {:class "text-gray-300"})
+          (e/for [[k [label]] filter-options]
+            (let [id (str "SortFilterControls-filter-" k)]
+              (dom/li (dom/input (dom/on "change"
+                                         (e/fn [e]
+                                           (e/client (let [v (-> e
+                                                                 .-target
+                                                                 .-checked)
+                                                           f (if v conj disj)]
+                                                       (swap! !ui-settings
+                                                         update-ui-settings!
+                                                         update
+                                                         :filter-opts
+                                                         f
+                                                         k)))))
+                                 (dom/props {:id id,
+                                             :type "checkbox",
+                                             :checked (contains? filter-options
+                                                                 k)}))
+                      (dom/label (dom/props {:for id}) (dom/text label)))))))
 
 (e/defn PageSelector
   [page num-pages]
-  (dom/div (e/for [i (drop 1 (range (inc num-pages)))]
+  (dom/div (dom/props {:class "text-gray-300"})
+           (e/for [i (drop 1 (range (inc num-pages)))]
              (when (not= 1 i) (dom/text " | "))
              (dom/a (dom/on "click"
                             (e/fn [_]

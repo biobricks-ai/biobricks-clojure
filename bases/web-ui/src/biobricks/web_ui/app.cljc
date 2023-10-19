@@ -94,14 +94,47 @@
                 "Parquet")
     (RoundedBadge. "text-gray-400 bg-gray-400/10 ring-gray-400/30" ext)))
 
+(e/defn ChevronBase
+  [style on-click]
+  (svg/svg
+    (dom/props {:class "h-5 w-5 flex-none text-gray-400",
+                :viewBox "0 0 20 20",
+                :fill "currentColor",
+                :aria-hidden "true",
+                :style style})
+    (when on-click (dom/on "click" on-click))
+    (svg/path
+      (dom/props
+        {:fill-rule "evenodd",
+         :d
+           "M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z",
+         :clip-rule "evenodd"}))))
+
+(e/defn ChevronRight [on-click] (ChevronBase. nil on-click))
+
+(e/defn ChevronDown
+  [on-click]
+  (ChevronBase. {:transform "rotate(90deg)"} on-click))
+
+(e/defn XRed
+  []
+  (svg/svg
+    (dom/props
+      {:viewBox "0 0 14 14",
+       :class
+         "align-middle inline-block h-5 w-5 stroke-red-700/75 group-hover:stroke-red-700/100"})
+    (svg/path (dom/props {:d "M4 4l6 6m0-6l-6 6", :stroke-width "1.5"}))))
+
+; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
   [[{:as repo,
      :db/keys [id],
-     :biobrick/keys [data-bytes data-pulled? health-check-data
-                     health-check-failures],
-     :git-repo/keys [checked-at description full-name html-url updated-at]}
+     :biobrick/keys [data-bytes health-check-data health-check-failures],
+     :git-repo/keys [description full-name html-url updated-at]}
     biobrick-file-ids]]
-  (let [biobrick-files (e/server
+  (let [!expanded? (atom false)
+        expanded? (e/watch !expanded?)
+        biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         extensions (->> biobrick-files
                         (map :biobrick-file/extension)
@@ -113,15 +146,16 @@
              "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
         (dom/div
           (dom/props {:class "min-w-0 flex-auto"})
-          (dom/div (dom/props {:class "flex items-center gap-x-3"})
-                   (StatusCircle. (cond (pos? health-check-failures) false
-                                        (seq extensions) true))
-                   (dom/h2
-                     (dom/props
-                       {:class
-                          "min-w-0 text-sm font-semibold leading-6 text-white"})
-                     (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
-                            (dom/text full-name))))
+          (dom/div
+            (dom/props {:class "flex items-center gap-x-3"})
+            (StatusCircle.
+              (cond (pos? health-check-failures) false
+                    (and (zero? health-check-failures) (seq extensions)) true))
+            (dom/h2 (dom/props
+                      {:class
+                         "min-w-0 text-sm font-semibold leading-6 text-white"})
+                    (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
+                           (dom/text full-name))))
           (dom/div
             (dom/props
               {:class
@@ -134,20 +168,29 @@
             (when updated-at
               (dom/p (dom/props {:class "whitespace-nowrap"})
                      (dom/text "Updated "
-                               (e/server (date-str updated-at now))))))
-          #_(dom/div
-              (cond (nil? health-check-failures) (dom/text
-                                                   "Waiting on health check")
-                    (zero? health-check-failures) (dom/text "✓ Healthy")
-                    :else (let [fails (->> health-check-data
-                                           edn/read-string
-                                           (me/filter-vals (comp not true?)))]
-                            (dom/details
-                              (dom/summary
-                                (dom/text "✗ " (count fails) " checks failed"))
-                              (dom/ul (e/for [[_ v] fails]
-                                        (dom/li (dom/text v)))))))))
+                               (e/server (date-str updated-at now)))))))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
+        (if expanded?
+          (ChevronDown. (e/fn [_] (swap! !expanded? not)))
+          (ChevronRight. (e/fn [_] (swap! !expanded? not)))))
+      (when expanded?
+        (dom/li
+          (dom/props
+            {:class
+               "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
+          (dom/div (dom/props {:class "min-w-0 flex-auto text-gray-300"})
+                   (dom/p (dom/text description))
+                   (when (some-> health-check-failures
+                                 pos?)
+                     (let [fails (->> health-check-data
+                                      edn/read-string
+                                      (me/filter-vals (comp not true?)))]
+                       (dom/div (dom/props {:style {:margin-top "1em"}})
+                                (dom/span (dom/props {:class "font-bold"})
+                                          (dom/text (count fails)
+                                                    " checks failed:"))
+                                (dom/ul (e/for [[_ v] fails]
+                                          (dom/li (XRed.) (dom/text v)))))))))
         (e/server (when (-> system
                             instance
                             :debug?)

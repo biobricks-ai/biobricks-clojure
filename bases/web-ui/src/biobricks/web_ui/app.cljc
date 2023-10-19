@@ -137,7 +137,7 @@
         biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         extensions (->> biobrick-files
-                        (map :biobrick-file/extension)
+                        (keep :biobrick-file/extension)
                         set)]
     (e/client
       (dom/li

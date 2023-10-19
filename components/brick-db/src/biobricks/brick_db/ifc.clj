@@ -9,6 +9,7 @@
             [clojure.tools.logging.readable :as log]
             [datalevin.core :as dtlv]
             [donut.system :as-alias ds]
+            [hato.client :as hc]
             [medley.core :as me])
   (:import [java.io PushbackReader]))
 
@@ -84,25 +85,41 @@
         (dtlv/transact! datalevin-conn
                         [{:db/id id, :biobrick/data-pulled? true}])))))
 
+(defn get-biobrick-file-datoms*
+  [brick-id brick-config file-specs]
+  (->> (for [{:as file-spec, :keys [hash md5 path size]} file-specs
+             :let [dvc-url (brick-repo/download-url brick-config
+                                                    md5
+                                                    :old-cache-location?
+                                                    (not hash))
+                   dir? (str/ends-with? md5 ".dir")
+                   biobrick-file {:biobrick-file/biobrick brick-id,
+                                  :biobrick-file/biobrick+dvc-url [brick-id
+                                                                   dvc-url],
+                                  :biobrick-file/directory? dir?,
+                                  :biobrick-file/dvc-url dvc-url,
+                                  :biobrick-file/extension (fs/extension path),
+                                  :biobrick-file/path path,
+                                  :biobrick-file/size size}]]
+         (try (hc/head dvc-url)
+              (if dir?
+                (get-biobrick-file-datoms*
+                  brick-id
+                  brick-config
+                  (brick-repo/resolve-dirs brick-config [file-spec]))
+                [(assoc biobrick-file :biobrick-file/missing? false)])
+              (catch Exception e
+                (if (= "status: 404" (ex-message e))
+                  [(assoc biobrick-file :biobrick-file/missing? true)]
+                  (throw e)))))
+       (apply concat)
+       (keep #(when (seq %) (me/remove-vals nil? %)))))
+
 (defn get-biobrick-file-datoms
-  [{:keys [datalevin-conn]} dir brick-id]
-  (let [brick-config (brick-repo/brick-config dir)
-        file-specs (->> (brick-repo/brick-data-file-specs dir)
-                        (brick-repo/resolve-dirs brick-config))]
-    (->> (for [{:keys [hash md5 path size]} file-specs
-               :let [dvc-url (brick-repo/download-url brick-config
-                                                      md5
-                                                      :old-cache-location?
-                                                      (not hash))]]
-           (when-not (str/ends-with? md5 ".dir")
-             (->> {:biobrick-file/biobrick brick-id,
-                   :biobrick-file/biobrick+dvc-url [brick-id dvc-url],
-                   :biobrick-file/dvc-url dvc-url,
-                   :biobrick-file/extension (fs/extension path),
-                   :biobrick-file/path path,
-                   :biobrick-file/size size}
-                  (me/remove-vals nil?))))
-         (filter seq))))
+  [dir brick-id]
+  (get-biobrick-file-datoms* brick-id
+                             (brick-repo/brick-config dir)
+                             (brick-repo/brick-data-file-specs dir)))
 
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}
@@ -131,9 +148,7 @@
                                                           (remove true?)
                                                           count),
                      :git-repo/is-biobrick? true})]
-                 (concat (try (get-biobrick-file-datoms instance dir id)
-                              (catch Exception e
-                                (log/error "Error getting biobrick files" e))))
+                 (concat (get-biobrick-file-datoms dir id))
                  (dtlv/transact! datalevin-conn))
             (future (check-brick-data instance dir id)))))))
 

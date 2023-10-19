@@ -138,7 +138,9 @@
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         extensions (->> biobrick-files
                         (keep :biobrick-file/extension)
-                        set)]
+                        set)
+        missing-files (->> biobrick-files
+                           (filter :biobrick-file/missing?))]
     (e/client
       (dom/li
         (dom/props
@@ -149,7 +151,7 @@
           (dom/div
             (dom/props {:class "flex items-center gap-x-3"})
             (StatusCircle.
-              (cond (pos? health-check-failures) false
+              (cond (or (pos? health-check-failures) (seq missing-files)) false
                     (and (zero? health-check-failures) (seq extensions)) true))
             (dom/h2 (dom/props
                       {:class
@@ -186,11 +188,21 @@
                                       edn/read-string
                                       (me/filter-vals (comp not true?)))]
                        (dom/div (dom/props {:style {:margin-top "1em"}})
-                                (dom/span (dom/props {:class "font-bold"})
-                                          (dom/text (count fails)
-                                                    " checks failed:"))
                                 (dom/ul (e/for [[_ v] fails]
-                                          (dom/li (XRed.) (dom/text v)))))))))
+                                          (dom/li (XRed.) (dom/text v)))))))
+                   (when (seq missing-files)
+                     (dom/p (XRed.)
+                            (dom/text "Missing "
+                                      (count missing-files)
+                                      (if (= 1 (count missing-files))
+                                        " file or directory"
+                                        " files or directories")
+                                      " on S3 remote:"))
+                     (dom/ul (dom/props {:class "list-disc pl-5"})
+                             (e/for [{:biobrick-file/keys [directory? path]}
+                                       missing-files]
+                               (dom/li (dom/text path
+                                                 (when directory? "/"))))))))
         (e/server (when (-> system
                             instance
                             :debug?)

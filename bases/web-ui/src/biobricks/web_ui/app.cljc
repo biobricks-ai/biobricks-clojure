@@ -69,10 +69,7 @@
 
 (e/defn DotDivider
   []
-  (dom/element :svg
-               (dom/props {:viewBox "0 0 2 2",
-                           :class "h-0.5 w-0.5 flex-none fill-gray-300"})
-               (dom/element :circle (dom/props {:cx "1", :cy "1", :r "1"}))))
+  (dom/span (dom/props {:class "text-gray-300"}) (dom/text "·")))
 
 (e/defn RoundedBadge
   [colors label]

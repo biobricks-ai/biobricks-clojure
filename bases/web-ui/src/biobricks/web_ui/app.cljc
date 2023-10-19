@@ -26,8 +26,8 @@
               :datalevin-conn)))
 
 ;; Used to trigger queries on db change
-(e/def datalevin-db (e/server (e/watch (datalevin-conn system))))
-
+; Reactivity disabled for now
+(e/def datalevin-db (e/server (e/watch (atom @(datalevin-conn system)))))
 
 #?(:clj (defonce !now (atom (LocalDateTime/now))))
 (e/def now (e/server (e/watch !now)))

@@ -7,6 +7,7 @@
             #?(:clj [datalevin.core :as dtlv])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
+            [hyperfiddle.electric-svg :as svg]
             [hyperfiddle.electric-ui4 :as ui]
             [medley.core :as me])
   #?(:clj (:import [java.time LocalDateTime])))
@@ -69,7 +70,9 @@
 
 (e/defn DotDivider
   []
-  (dom/span (dom/props {:class "text-gray-300"}) (dom/text "·")))
+  (svg/svg (dom/props {:viewBox "0 0 2 2",
+                       :class "h-0.5 w-0.5 flex-none fill-gray-300"})
+           (svg/circle (dom/props {:cx "1", :cy "1", :r "1"}))))
 
 (e/defn RoundedBadge
   [colors label]

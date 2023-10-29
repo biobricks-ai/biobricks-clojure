@@ -101,7 +101,7 @@
                 :viewBox "0 0 20 20",
                 :fill "currentColor",
                 :aria-hidden "true",
-                :style style})
+                :style (merge {:cursor "pointer"} style)})
     (when on-click (dom/on "click" on-click))
     (svg/path
       (dom/props
@@ -289,7 +289,8 @@
              (dom/a (dom/on "click"
                             (e/fn [_]
                               (e/client (swap! !ui-settings assoc :page i))))
-                    (when (= i page) (dom/props {:style {:font-weight "bold"}}))
+                    (dom/props {:style {:cursor "pointer",
+                                        :font-weight (when (= i page) "bold")}})
                     (dom/text i)))))
 
 ; https://tailwindui.com/components/application-ui/page-examples/home-screens#component-1cb122f657954361d2f5fce7ec641480

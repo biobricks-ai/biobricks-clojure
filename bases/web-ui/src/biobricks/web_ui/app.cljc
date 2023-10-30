@@ -9,7 +9,10 @@
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-svg :as svg]
             [hyperfiddle.electric-ui4 :as ui]
-            [medley.core :as me])
+            [medley.core :as me]
+            [missionary.core :as m]
+            [reitit.core :as rr]
+            #?(:cljs [reitit.frontend.easy :as rfe]))
   #?(:clj (:import [java.time LocalDateTime])))
 
 (e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.system/system))))
@@ -44,6 +47,13 @@
                   :page 1,
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
+
+(def router (rr/router [["/" ["" :home]]]))
+
+#?(:cljs (e/def router-flow
+           (->> (m/observe (fn [!] (rfe/start! router ! {:use-fragment false})))
+                (m/relieve {})
+                new)))
 
 #?(:clj (defn date-str [date now] (humanize/datetime date :now-dt now)))
 
@@ -294,7 +304,7 @@
                     (dom/text i)))))
 
 ; https://tailwindui.com/components/application-ui/page-examples/home-screens#component-1cb122f657954361d2f5fce7ec641480
-(e/defn App
+(e/defn ReposList
   []
   (e/server
     (let [instance (-> system
@@ -352,3 +362,15 @@
                        (SortFilterControls. ui-settings)
                        (Repos. repos-on-page)
                        (PageSelector. page num-pages)))))))))
+
+(e/defn App
+  []
+  (e/client (let [match router-flow
+                  match-name (-> match
+                                 :data
+                                 :name)]
+              (if match
+                (case match-name
+                  :home (ReposList.)
+                  (dom/div (dom/text "No component for " (str match-name))))
+                (dom/div (dom/text "404 Not Found"))))))

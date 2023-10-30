@@ -2,7 +2,7 @@
         com.hyperfiddle/rcf {:mvn/version "20220926-202227"},
         hashp/hashp {:mvn/version "0.2.2"},
         medley/medley {:mvn/version "1.4.0"},
-        metosin/reitit {:mvn/version "0.6.0"},
+        metosin/reitit {:mvn/version "0.7.0-alpha7"},
         org.clj-commons/humanize {:mvn/version "1.0"},
         org.clojure/clojure {:mvn/version "1.11.1"},
         org.clojure/clojurescript {:mvn/version "1.11.121"},

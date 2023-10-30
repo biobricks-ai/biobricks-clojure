@@ -44,7 +44,6 @@
 
 #?(:cljs (defonce !ui-settings
            (atom {:filter-opts #{"healthy" "unhealthy"},
-                  :page 1,
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
@@ -298,7 +297,8 @@
              (when (not= 1 i) (dom/text " | "))
              (dom/a (dom/on "click"
                             (e/fn [_]
-                              (e/client (swap! !ui-settings assoc :page i))))
+                              (e/client (rfe/set-query #(assoc %
+                                                          :page (str i))))))
                     (dom/props {:style {:cursor "pointer",
                                         :font-weight (when (= i page) "bold")}})
                     (dom/text i)))))
@@ -311,7 +311,12 @@
                        :donut.system/instances
                        :web-ui
                        :app)
-          {:keys [filter-opts page sort-by-opt]} (e/client ui-settings)
+          {:keys [filter-opts sort-by-opt]} (e/client ui-settings)
+          page (e/client (or (some-> router-flow
+                                     :query-params
+                                     :page
+                                     parse-long)
+                             1))
           filter-preds (mapv (comp second filter-options) filter-opts)
           filter-f #(loop [[pred & more] filter-preds]
                       (cond (nil? pred) false

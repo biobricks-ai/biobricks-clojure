@@ -47,7 +47,9 @@
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
-(def router (rr/router [["/" ["" :home]]]))
+(def router
+  (rr/router [["/" ["" :home]]
+              ["/u" ["/:org-name" ["/:brick-name" :biobrick]]]]))
 
 #?(:cljs (e/def router-flow
            (->> (m/observe (fn [!] (rfe/start! router ! {:use-fragment false})))
@@ -136,13 +138,10 @@
 
 ; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
-  [[{:as repo,
-     :db/keys [id],
-     :biobrick/keys [data-bytes health-check-data health-check-failures],
-     :git-repo/keys [description full-name html-url updated-at]}
-    biobrick-file-ids]]
-  (let [!expanded? (atom false)
-        expanded? (e/watch !expanded?)
+  [[{:biobrick/keys [data-bytes health-check-failures],
+     :git-repo/keys [full-name html-url updated-at]} biobrick-file-ids]]
+  (let [[org-name brick-name] (e/server (str/split full-name
+                                                   (re-pattern "\\/")))
         biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         extensions (->> biobrick-files
@@ -181,58 +180,101 @@
                      (dom/text "Updated "
                                (e/server (date-str updated-at now)))))))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
-        (if expanded?
-          (ChevronDown. (e/fn [_] (swap! !expanded? not)))
-          (ChevronRight. (e/fn [_] (swap! !expanded? not)))))
-      (when expanded?
-        (dom/li
-          (dom/props
-            {:class
-               "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
-          (dom/div (dom/props {:class "min-w-0 flex-auto text-gray-300"})
-                   (dom/p (dom/text description))
-                   (when (some-> health-check-failures
-                                 pos?)
-                     (let [fails (->> health-check-data
-                                      edn/read-string
-                                      (me/filter-vals (comp not true?)))]
-                       (dom/div (dom/props {:style {:margin-top "1em"}})
-                                (dom/ul (e/for [[_ v] fails]
-                                          (dom/li (XRed.) (dom/text v)))))))
-                   (when (seq missing-files)
-                     (dom/p (XRed.)
-                            (dom/text "Missing "
-                                      (count missing-files)
-                                      (if (= 1 (count missing-files))
-                                        " file or directory"
-                                        " files or directories")
-                                      " on S3 remote:"))
-                     (dom/ul (dom/props {:class "list-disc pl-5"})
-                             (e/for [{:biobrick-file/keys [directory? path]}
-                                       missing-files]
-                               (dom/li (dom/text path
-                                                 (when directory? "/"))))))))
-        (e/server (when (-> system
-                            instance
-                            :debug?)
-                    (e/client (dom/div (dom/props {:style {:clear "left"}})
-                                       (ui/button
-                                         (e/fn []
-                                           (e/server (brick-db/check-brick-by-id
-                                                       (-> system
-                                                           instance
-                                                           :brick-db)
-                                                       id)))
-                                         (dom/text
-                                           "Force brick info update"))))))
-        (ElementData. "repo" (e/server (pprint-str repo)))
-        (ElementData. "biobrick-files"
-                      (e/server (pprint-str biobrick-files)))))))
+        (e/client (dom/a (dom/props {:href (rfe/href :biobrick
+                                                     {:brick-name brick-name,
+                                                      :org-name org-name})})
+                         (ChevronRight. nil)))))))
 
 (e/defn Repos
   [repos]
   (dom/ul (dom/props {:role "list", :class "divide-y divide-white/5"})
           (e/for [repo repos] (Repo. repo))))
+
+(e/defn BioBrick
+  [[{:as repo,
+     :db/keys [id],
+     :biobrick/keys [data-bytes health-check-data health-check-failures],
+     :git-repo/keys [description full-name html-url updated-at]}
+    biobrick-file-ids]]
+  (let [biobrick-files (e/server
+                         (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
+        extensions (->> biobrick-files
+                        (keep :biobrick-file/extension)
+                        set)
+        missing-files (->> biobrick-files
+                           (filter :biobrick-file/missing?))]
+    (e/client
+      (dom/li
+        (dom/props
+          {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
+        (dom/div
+          (dom/props {:class "min-w-0 flex-auto"})
+          (dom/div
+            (dom/props {:class "flex items-center gap-x-3"})
+            (StatusCircle.
+              (cond (or (pos? health-check-failures) (seq missing-files)) false
+                    (and (zero? health-check-failures) (seq extensions)) true))
+            (dom/h2 (dom/props
+                      {:class
+                         "min-w-0 text-sm font-semibold leading-6 text-white"})
+                    (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
+                           (dom/text full-name))))
+          (dom/div
+            (dom/props
+              {:class
+                 "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
+            (when (some-> data-bytes
+                          pos?)
+              (dom/p (dom/props {:class "whitespace-nowrap"})
+                     (dom/text (e/server (humanize/filesize data-bytes))))
+              (DotDivider.))
+            (when updated-at
+              (dom/p (dom/props {:class "whitespace-nowrap"})
+                     (dom/text "Updated "
+                               (e/server (date-str updated-at now)))))))
+        (e/for [ext (sort extensions)] (FileExtensionBadge. ext)))
+      (dom/li
+        (dom/props
+          {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
+        (dom/div (dom/props {:class "min-w-0 flex-auto text-gray-300"})
+                 (dom/p (dom/text description))
+                 (when (some-> health-check-failures
+                               pos?)
+                   (let [fails (->> health-check-data
+                                    edn/read-string
+                                    (me/filter-vals (comp not true?)))]
+                     (dom/div (dom/props {:style {:margin-top "1em"}})
+                              (dom/ul (e/for [[_ v] fails]
+                                        (dom/li (XRed.) (dom/text v)))))))
+                 (when (seq missing-files)
+                   (dom/p (XRed.)
+                          (dom/text "Missing "
+                                    (count missing-files)
+                                    (if (= 1 (count missing-files))
+                                      " file or directory"
+                                      " files or directories")
+                                    " on S3 remote:"))
+                   (dom/ul (dom/props {:class "list-disc pl-5"})
+                           (e/for [{:biobrick-file/keys [directory? path]}
+                                     missing-files]
+                             (dom/li (dom/text path (when directory? "/"))))))))
+      (e/server (when (-> system
+                          instance
+                          :debug?)
+                  (e/client (dom/div (dom/props {:style {:clear "left"}})
+                                     (ui/button
+                                       (e/fn []
+                                         (e/server (brick-db/check-brick-by-id
+                                                     (-> system
+                                                         instance
+                                                         :brick-db)
+                                                     id)))
+                                       (dom/text "Force brick info update"))))))
+      (ElementData. "repo" (e/server (pprint-str repo)))
+      (ElementData. "biobrick-files" (e/server (pprint-str biobrick-files))))))
+
 
 (defn healthy?
   [repo]
@@ -368,6 +410,31 @@
                        (Repos. repos-on-page)
                        (PageSelector. page num-pages)))))))))
 
+(e/defn BioBrickPage
+  []
+  (e/server
+    (let [{:keys [brick-name org-name]} (e/client (-> router-flow
+                                                      :path-params))
+          repo-name (str org-name "/" brick-name)
+          repo (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :in $ ?name
+                              :where [?e :git-repo/is-biobrick? true]
+                              [?e :git-repo/full-name ?name]
+                              [?file :biobrick-file/biobrick ?e]]
+                            datalevin-db
+                            repo-name)
+                    (concat (dtlv/q '[:find (pull ?e [*]) :in $ ?name :where
+                                      [?e :git-repo/is-biobrick? true]
+                                      [?e :git-repo/full-name ?name]
+                                      (not [?file :biobrick-file/biobrick ?e])]
+                                    datalevin-db
+                                    repo-name))
+                    first)]
+      (e/client (dom/link (dom/props {:rel "stylesheet",
+                                      :href "/css/compiled.css"}))
+                (dom/div (dom/div (dom/props {:class "xl:pl-72"})
+                                  (dom/main (dom/props {:clas "lg:pr-96"})
+                                            (BioBrick. repo))))))))
+
 (e/defn App
   []
   (e/client (let [match router-flow
@@ -377,5 +444,6 @@
               (if match
                 (case match-name
                   :home (ReposList.)
+                  :biobrick (BioBrickPage.)
                   (dom/div (dom/text "No component for " (str match-name))))
                 (dom/div (dom/text "404 Not Found"))))))

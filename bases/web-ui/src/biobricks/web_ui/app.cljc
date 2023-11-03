@@ -139,7 +139,7 @@
 ; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
   [[{:biobrick/keys [data-bytes health-check-failures],
-     :git-repo/keys [full-name html-url updated-at]} biobrick-file-ids]]
+     :git-repo/keys [full-name updated-at]} biobrick-file-ids]]
   (let [[org-name brick-name] (e/server (str/split full-name
                                           (re-pattern "\\/")))
         biobrick-files (e/server
@@ -148,7 +148,10 @@
                      (keep :biobrick-file/extension)
                      set)
         missing-files (->> biobrick-files
-                        (filter :biobrick-file/missing?))]
+                        (filter :biobrick-file/missing?))
+        brick-href (e/client
+                     (rfe/href :biobrick
+                       {:brick-name brick-name :org-name org-name}))]
     (e/client
       (dom/li
         (dom/props
@@ -164,7 +167,7 @@
             (dom/h2 (dom/props
                       {:class
                        "min-w-0 text-sm font-semibold leading-6 text-white"})
-              (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
+              (dom/a (dom/props {:class "flex gap-x-2" :href brick-href})
                 (dom/text full-name))))
           (dom/div
             (dom/props
@@ -180,9 +183,7 @@
                 (dom/text "Updated "
                   (e/server (date-str updated-at now)))))))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
-        (e/client (dom/a (dom/props {:href (rfe/href :biobrick
-                                             {:brick-name brick-name,
-                                              :org-name org-name})})
+        (e/client (dom/a (dom/props {:href brick-href})
                     (ChevronRight. nil)))))))
 
 (e/defn Repos
@@ -191,10 +192,9 @@
     (e/for [repo repos] (Repo. repo))))
 
 (e/defn BioBrick
-  [[{:as repo,
-     :db/keys [id],
+  [[{:db/keys [id],
      :biobrick/keys [data-bytes health-check-data health-check-failures],
-     :git-repo/keys [description full-name html-url updated-at]}
+     :git-repo/keys [description full-name updated-at]}
     biobrick-file-ids]]
   (let [biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
@@ -218,7 +218,7 @@
             (dom/h2 (dom/props
                       {:class
                        "min-w-0 text-sm font-semibold leading-6 text-white"})
-              (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
+              (dom/span (dom/props {:class "flex gap-x-2"})
                 (dom/text (str/replace full-name #"/" " / ")))))
           (dom/div
             (dom/props

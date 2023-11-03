@@ -219,7 +219,7 @@
                       {:class
                        "min-w-0 text-sm font-semibold leading-6 text-white"})
               (dom/a (dom/props {:href html-url, :class "flex gap-x-2"})
-                (dom/text full-name))))
+                (dom/text (str/replace full-name #"/" " / ")))))
           (dom/div
             (dom/props
               {:class

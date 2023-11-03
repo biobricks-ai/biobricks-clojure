@@ -18,7 +18,7 @@
   [{:keys [version], :or {version version}}]
   (format "target/%s-%s-standalone.jar" (name lib) version))
 
-(defn clean-cljs [_] (b/delete {:path "resources/public/js"}))
+(defn clean-cljs [_] (b/delete {:path "bases/web-ui/resources/public/js"}))
 
 (defn build-client
   "Prod optimized ClojureScript client build. (Note: in dev, the client is built 
@@ -51,8 +51,8 @@ on startup)"
   ; CSS should come after JS because Tailwind analyzes the classes in the JS
   (println "Building CSS")
   (build-css nil)
-  (println "Bundling sources")
-  (b/copy-dir {:src-dirs ["src" "resources"], :target-dir class-dir})
+  (println "Bundling resources")
+  (b/copy-dir {:src-dirs ["bases/web-ui/resources"], :target-dir class-dir})
   (println "Compiling server. Version:" version)
   (b/compile-clj {:basis basis,
                   :src-dirs ["src"],

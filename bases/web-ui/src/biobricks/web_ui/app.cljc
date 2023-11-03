@@ -144,7 +144,12 @@
                                           (re-pattern "\\/")))
         biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
-        extensions (->> biobrick-files
+        brick-data-files (->> biobrick-files
+                           (remove #(or (:biobrick-file/directory? %)
+                                      (:biobrick-file/missing? %)
+                                      (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
+                           (sort-by :biobrick-file/path))
+        extensions (->> brick-data-files
                      (keep :biobrick-file/extension)
                      set)
         missing-files (->> biobrick-files
@@ -198,15 +203,19 @@
     (e/for [repo repos] (Repo. repo))))
 
 (e/defn BioBrick
-  [[{:db/keys [id],
-     :biobrick/keys [data-bytes health-check-data health-check-failures],
+  [[{:biobrick/keys [data-bytes health-check-data health-check-failures],
      :git-repo/keys [description full-name updated-at]}
     biobrick-file-ids]]
   (let [[org-name brick-name] (e/server (str/split full-name
                                           (re-pattern "\\/")))
         biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
-        extensions (->> biobrick-files
+        brick-data-files (->> biobrick-files
+                           (remove #(or (:biobrick-file/directory? %)
+                                      (:biobrick-file/missing? %)
+                                      (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
+                           (sort-by :biobrick-file/path))
+        extensions (->> brick-data-files
                      (keep :biobrick-file/extension)
                      set)
         missing-files (->> biobrick-files

@@ -168,7 +168,13 @@
                       {:class
                        "min-w-0 text-sm font-semibold leading-6 text-white"})
               (dom/a (dom/props {:class "flex gap-x-2" :href brick-href})
-                (dom/text full-name))))
+                (dom/span (dom/props {:class "truncate"})
+                  (dom/text org-name))
+                (dom/span (dom/props {:class "text-gray-400"})
+                  (dom/text "/"))
+                (dom/span (dom/props {:class "whitespace-nowrap"})
+                  (dom/text brick-name))
+                (dom/span (dom/props {:class "absolute inset-0"})))))
           (dom/div
             (dom/props
               {:class
@@ -196,7 +202,9 @@
      :biobrick/keys [data-bytes health-check-data health-check-failures],
      :git-repo/keys [description full-name updated-at]}
     biobrick-file-ids]]
-  (let [biobrick-files (e/server
+  (let [[org-name brick-name] (e/server (str/split full-name
+                                          (re-pattern "\\/")))
+        biobrick-files (e/server
                          (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         extensions (->> biobrick-files
                      (keep :biobrick-file/extension)
@@ -219,7 +227,13 @@
                       {:class
                        "min-w-0 text-sm font-semibold leading-6 text-white"})
               (dom/span (dom/props {:class "flex gap-x-2"})
-                (dom/text (str/replace full-name #"/" " / ")))))
+                (dom/span (dom/props {:class "truncate"})
+                  (dom/text org-name))
+                (dom/span (dom/props {:class "text-gray-400"})
+                  (dom/text "/"))
+                (dom/span (dom/props {:class "whitespace-nowrap"})
+                  (dom/text brick-name))
+                (dom/span (dom/props {:class "absolute inset-0"})))))
           (dom/div
             (dom/props
               {:class

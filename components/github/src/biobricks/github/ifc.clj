@@ -19,12 +19,12 @@
                       "Authorization" (when token (str "Bearer " token)),
                       "User-Agent" "Hato",
                       "X-GitHub-Api-Version" "2022-11-28"}
-                     (me/remove-vals nil?))
+                  (me/remove-vals nil?))
         response (hc/get url (merge {:headers headers, :as :stream} opts))]
     (-> response
-        :body
-        io/reader
-        (json/read {:key-fn keyword}))))
+      :body
+      io/reader
+      (json/read {:key-fn keyword}))))
 
 (defn list-org-repos
   "Lists repositories for the specified organization.
@@ -34,13 +34,13 @@
   (lazy-seq (let [page-num (or page-num 1)
                   per-page 30
                   results
-                    (get-url
-                      (str "https://api.github.com/orgs/" org-name "/repos")
-                      {:query-params {"page" page-num, "per_page" per-page},
-                       :token (:token opts)})]
+                  (get-url
+                    (str "https://api.github.com/orgs/" org-name "/repos")
+                    {:query-params {"page" page-num, "per_page" per-page},
+                     :token (:token opts)})]
               (concat results
-                      (when (= per-page (count results))
-                        (list-org-repos opts org-name (inc page-num)))))))
+                (when (= per-page (count results))
+                  (list-org-repos opts org-name (inc page-num)))))))
 
 (defn parse-localdatetime
   "Parse a string in ISO Date/Time format to a java.time.LocalDateTime.
@@ -52,9 +52,9 @@
 (defn localdatetime->date
   [ldt]
   (-> ldt
-      (.atZone (ZoneId/systemDefault))
-      .toInstant
-      Date/from))
+    (.atZone (ZoneId/systemDefault))
+    .toInstant
+    Date/from))
 
 (defn parse-date
   "Parse a string in ISO Date/Time format to a java.util.Date.

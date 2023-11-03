@@ -13,4 +13,4 @@
     (if (zero? exit)
       proc-map
       (throw (ex-info (format "Unexpected exit code: %s" exit)
-                      {:process proc-map})))))
+               {:process proc-map})))))

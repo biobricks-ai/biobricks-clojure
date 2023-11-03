@@ -16,10 +16,10 @@
 (defn datalevin-schema
   []
   (-> "brick-db/datalevin-schema.edn"
-      io/resource
-      io/reader
-      PushbackReader.
-      edn/read))
+    io/resource
+    io/reader
+    PushbackReader.
+    edn/read))
 
 (defn- run-every-ms
   [interval-ms f ex-handler]
@@ -29,45 +29,45 @@
           runtime-ms (quot (- end start) 1000000)
           sleep-for (- interval-ms runtime-ms)]
       (cond (.isInterrupted (Thread/currentThread)) nil
-            (pos? sleep-for)
+        (pos? sleep-for)
               ;; Minimize drift by re-calculating what start time should be.
               ;; Otherwise variations in actual sleep times will cause drift.
-              (when (try (Thread/sleep sleep-for)
-                         :recur
-                         (catch InterruptedException _))
-                (recur (+ start (* 1000000 interval-ms))))
+        (when (try (Thread/sleep sleep-for)
+                :recur
+                (catch InterruptedException _))
+          (recur (+ start (* 1000000 interval-ms))))
             ;; If the task took longer than the interval, we just run it
             ;; right away.
-            :else (recur end)))))
+        :else (recur end)))))
 
 (defn check-github-repos
   [{:keys [datalevin-conn github-org-name github-token]}]
   (doseq [{:keys [clone_url created_at description full_name html_url id
                   updated_at]}
-            (github/list-org-repos {:token github-token} github-org-name)]
+          (github/list-org-repos {:token github-token} github-org-name)]
     (dtlv/transact! datalevin-conn
-                    [(->> #:git-repo{:checked-at (java.util.Date.),
-                                     :clone-url clone_url,
-                                     :created-at (github/parse-date created_at),
-                                     :description description,
-                                     :full-name full_name,
-                                     :github-id id,
-                                     :html-url html_url,
-                                     :updated-at (github/parse-date updated_at)}
-                          (me/remove-vals nil?))])))
+      [(->> #:git-repo{:checked-at (java.util.Date.),
+                       :clone-url clone_url,
+                       :created-at (github/parse-date created_at),
+                       :description description,
+                       :full-name full_name,
+                       :github-id id,
+                       :html-url html_url,
+                       :updated-at (github/parse-date updated_at)}
+         (me/remove-vals nil?))])))
 
 (defn github-poller
   [{:as instance, :keys [github-poll-interval-ms]}]
   (doto (Thread. #(run-every-ms github-poll-interval-ms
-                                (fn [] (check-github-repos instance))
-                                prn))
+                    (fn [] (check-github-repos instance))
+                    prn))
     (.setDaemon true)
     .start))
 
 (defn get-disk-free-space
   [path]
   (-> (java.nio.file.Files/getFileStore path)
-      .getUsableSpace))
+    .getUsableSpace))
 
 (defonce brick-lock (Object.))
 (defonce brick-data-lock (Object.))
@@ -77,21 +77,21 @@
   (when pull-dvc-data?
     (locking brick-data-lock
       (when (< maintain-disk-free-bytes
-               (- (get-disk-free-space dir) (brick-repo/pull-data-bytes dir)))
+              (- (get-disk-free-space dir) (brick-repo/pull-data-bytes dir)))
         (-> @(p/process {:dir (fs/file dir), :err :string, :out :string}
-                        "dvc" "pull"
-                        "-j" "4")
-            p/throw-on-error)
+               "dvc" "pull"
+               "-j" "4")
+          p/throw-on-error)
         (dtlv/transact! datalevin-conn
-                        [{:db/id id, :biobrick/data-pulled? true}])))))
+          [{:db/id id, :biobrick/data-pulled? true}])))))
 
 (defn get-biobrick-file-datoms*
   [brick-id brick-config file-specs]
   (->> (for [{:as file-spec, :keys [hash md5 path size]} file-specs
              :let [dvc-url (brick-repo/download-url brick-config
-                                                    md5
-                                                    :old-cache-location?
-                                                    (not hash))
+                             md5
+                             :old-cache-location?
+                             (not hash))
                    dir? (str/ends-with? md5 ".dir")
                    biobrick-file {:biobrick-file/biobrick brick-id,
                                   :biobrick-file/biobrick+dvc-url [brick-id
@@ -102,24 +102,24 @@
                                   :biobrick-file/path path,
                                   :biobrick-file/size size}]]
          (try (hc/head dvc-url)
-              (if dir?
-                (get-biobrick-file-datoms*
-                  brick-id
-                  brick-config
-                  (brick-repo/resolve-dirs brick-config [file-spec]))
-                [(assoc biobrick-file :biobrick-file/missing? false)])
-              (catch Exception e
-                (if (= "status: 404" (ex-message e))
-                  [(assoc biobrick-file :biobrick-file/missing? true)]
-                  (throw e)))))
-       (apply concat)
-       (keep #(when (seq %) (me/remove-vals nil? %)))))
+           (if dir?
+             (get-biobrick-file-datoms*
+               brick-id
+               brick-config
+               (brick-repo/resolve-dirs brick-config [file-spec]))
+             [(assoc biobrick-file :biobrick-file/missing? false)])
+           (catch Exception e
+             (if (= "status: 404" (ex-message e))
+               [(assoc biobrick-file :biobrick-file/missing? true)]
+               (throw e)))))
+    (apply concat)
+    (keep #(when (seq %) (me/remove-vals nil? %)))))
 
 (defn get-biobrick-file-datoms
   [dir brick-id]
   (get-biobrick-file-datoms* brick-id
-                             (brick-repo/brick-config dir)
-                             (brick-repo/brick-data-file-specs dir)))
+    (brick-repo/brick-config dir)
+    (brick-repo/brick-data-file-specs dir)))
 
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}
@@ -128,15 +128,15 @@
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
           dir (if (fs/exists? path)
                 (do (p/process {:dir (fs/file path), :err :string, :out :string}
-                               "git"
-                               "pull")
-                    path)
+                      "git"
+                      "pull")
+                  path)
                 (do (fs/create-dirs (fs/parent path))
-                    (brick-repo/clone (fs/parent path) clone-url)))
+                  (brick-repo/clone (fs/parent path) clone-url)))
           {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]
-             (dtlv/transact! datalevin-conn))
+          (dtlv/transact! datalevin-conn))
         (do (->> [(me/remove-vals
                     nil?
                     {:db/id id,
@@ -144,62 +144,62 @@
                      :biobrick/data-bytes data-bytes,
                      :biobrick/health-check-data (pr-str health-git),
                      :biobrick/health-check-failures (->> health-git
-                                                          vals
-                                                          (remove true?)
-                                                          count),
+                                                       vals
+                                                       (remove true?)
+                                                       count),
                      :git-repo/is-biobrick? true})]
-                 (concat (get-biobrick-file-datoms dir id))
-                 (dtlv/transact! datalevin-conn))
-            (future (check-brick-data instance dir id)))))))
+              (concat (get-biobrick-file-datoms dir id))
+              (dtlv/transact! datalevin-conn))
+          (future (check-brick-data instance dir id)))))))
 
 (defn check-brick-by-id
   [{:as instance, :keys [datalevin-conn]} id]
   (check-brick instance
-               (dtlv/pull (dtlv/db datalevin-conn)
-                          [:db/id :git-repo/clone-url :git-repo/full-name]
-                          id)))
+    (dtlv/pull (dtlv/db datalevin-conn)
+      [:db/id :git-repo/clone-url :git-repo/full-name]
+      id)))
 
 (defn check-bricks
   [{:as instance, :keys [datalevin-conn]}]
   (let
     [git-repos ;; Split into 2 queries due to differing free vars
-       (->>
-         (dtlv/q
-           '[:find (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
-             :where [?e :git-repo/github-id]
-             (or
-              [(missing? $ ?e :git-repo/is-biobrick?)]
-              (and
+     (->>
+       (dtlv/q
+         '[:find (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
+           :where [?e :git-repo/github-id]
+           (or
+             [(missing? $ ?e :git-repo/is-biobrick?)]
+             (and
                [?e :git-repo/is-biobrick? true]
                (or
-                [(missing? $ ?e :biobrick/checked-at)]
-                [(missing? $ ?e :biobrick/data-pulled?)]
-                [?e :biobrick/data-pulled? false])))]
-           (dtlv/db datalevin-conn))
-         (concat (dtlv/q
-                   '[:find
-                     (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
-                     :where [?e :git-repo/is-biobrick? true]
-                     [?e :biobrick/checked-at ?checked-at]
-                     [?e :git-repo/updated-at ?updated-at]
-                     [(.after ?updated-at ?checked-at)]]
-                   (dtlv/db datalevin-conn))))]
+                 [(missing? $ ?e :biobrick/checked-at)]
+                 [(missing? $ ?e :biobrick/data-pulled?)]
+                 [?e :biobrick/data-pulled? false])))]
+         (dtlv/db datalevin-conn))
+       (concat (dtlv/q
+                 '[:find
+                   (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
+                   :where [?e :git-repo/is-biobrick? true]
+                   [?e :biobrick/checked-at ?checked-at]
+                   [?e :git-repo/updated-at ?updated-at]
+                   [(.after ?updated-at ?checked-at)]]
+                 (dtlv/db datalevin-conn))))]
     (doseq [[git-repo] git-repos] (check-brick instance git-repo))))
 
 (comment
   (def instance
     (-> @biobricks.web-ui.api/system
-        :donut.system/instances
-        :brick-data
-        :brick-db))
+      :donut.system/instances
+      :brick-data
+      :brick-db))
   (check-github-repos instance)
   (check-bricks instance))
 
 (defn brick-poller
   [{:as instance, :keys [brick-poll-interval-ms]}]
   (doto (Thread. #(run-every-ms brick-poll-interval-ms
-                                (fn [] (check-bricks instance))
-                                prn))
+                    (fn [] (check-bricks instance))
+                    prn))
     (.setDaemon true)
     .start))
 
@@ -208,9 +208,9 @@
   {::ds/config config,
    ::ds/start (fn [{::ds/keys [config instance]}]
                 (or instance
-                    (-> config
-                        (assoc :brick-poller (brick-poller config)
-                               :github-poller (github-poller config))))),
+                  (-> config
+                    (assoc :brick-poller (brick-poller config)
+                      :github-poller (github-poller config))))),
    ::ds/stop (fn [{::ds/keys [instance],
                    {:keys [brick-poller github-poller]} ::ds/instance}]
                (when instance

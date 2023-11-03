@@ -12,10 +12,10 @@
     (if-not (.exists file)
       shadow-config/default-config
       (-> (shadow-config/read-config file)
-          (shadow-config/normalize)
-          (->> (merge shadow-config/default-config))
-          (update :builds #(merge shadow-config/default-builds %))
-          (assoc :user-config (shadow-config/load-user-config))))))
+        (shadow-config/normalize)
+        (->> (merge shadow-config/default-config))
+        (update :builds #(merge shadow-config/default-builds %))
+        (assoc :user-config (shadow-config/load-user-config))))))
 
 ; lazy load dev stuff - for faster REPL startup and cleaner dev classpath
 (def shadow-start!

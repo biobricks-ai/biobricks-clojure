@@ -4,8 +4,8 @@
 
 (deftest test-list-org-repos
   (is (= "biobricks-ai"
-         (-> (github/list-org-repos {:token (github/get-token-from-env)}
-                                    "biobricks-ai")
-             first
-             :owner
-             :login))))
+        (-> (github/list-org-repos {:token (github/get-token-from-env)}
+              "biobricks-ai")
+          first
+          :owner
+          :login))))

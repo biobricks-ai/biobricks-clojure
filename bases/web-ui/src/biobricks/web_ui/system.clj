@@ -21,25 +21,25 @@
 (defn system-def
   []
   {::ds/defs
-     {:brick-data
-        {:brick-db (brick-db/component
-                     {:bricks-path "bricks",
-                      :datalevin-conn (ds/local-ref [:local-datalevin :conn]),
-                      :brick-poll-interval-ms (* 1000 15),
-                      :github-org-name "biobricks-ai",
-                      :github-poll-interval-ms (* 1000 60 5),
-                      :github-token (github/get-token-from-env),
-                      :maintain-disk-free-bytes (* 100 1024 1024 1024),
-                      :pull-dvc-data? false}),
-         :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),
-         :local-datalevin (datalevin/local-db-component
-                            {:dir "datalevin",
-                             :schema (ds/local-ref [:datalevin-schema])})},
-      :web-ui {:app (sys/config-component
-                      {:brick-db (ds/ref [:brick-data :brick-db]),
-                       :datalevin-conn (ds/ref [:brick-data :local-datalevin
-                                                :conn]),
-                       :debug? false})}}})
+   {:brick-data
+    {:brick-db (brick-db/component
+                 {:bricks-path "bricks",
+                  :datalevin-conn (ds/local-ref [:local-datalevin :conn]),
+                  :brick-poll-interval-ms (* 1000 15),
+                  :github-org-name "biobricks-ai",
+                  :github-poll-interval-ms (* 1000 60 5),
+                  :github-token (github/get-token-from-env),
+                  :maintain-disk-free-bytes (* 100 1024 1024 1024),
+                  :pull-dvc-data? false}),
+     :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),
+     :local-datalevin (datalevin/local-db-component
+                        {:dir "datalevin",
+                         :schema (ds/local-ref [:datalevin-schema])})},
+    :web-ui {:app (sys/config-component
+                    {:brick-db (ds/ref [:brick-data :brick-db]),
+                     :datalevin-conn (ds/ref [:brick-data :local-datalevin
+                                              :conn]),
+                     :debug? false})}}})
 
 ;; Technically blocking during swap! can be bad, but in this particular
 ;; case it's never a problem. Using swap! here enforces a

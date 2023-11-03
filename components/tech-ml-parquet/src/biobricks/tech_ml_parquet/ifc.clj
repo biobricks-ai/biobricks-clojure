@@ -12,8 +12,8 @@
         path (Path. file-path)]
     (-> (with-open [reader (ParquetFileReader/open (.getConf fs) path)]
           (.getFooter reader))
-        ParquetMetadata/toJSON
-        (json/read-str {:key-fn keyword}))))
+      ParquetMetadata/toJSON
+      (json/read-str {:key-fn keyword}))))
 
 (comment
   (->

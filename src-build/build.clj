@@ -32,8 +32,8 @@ on startup)"
     {:debug debug,
      :verbose verbose,
      :config-merge
-       [{:compiler-options {:optimizations (if optimize :advanced :simple)},
-         :closure-defines {'hyperfiddle.electric-client/VERSION version}}]})
+     [{:compiler-options {:optimizations (if optimize :advanced :simple)},
+       :closure-defines {'hyperfiddle.electric-client/VERSION version}}]})
   (shadow-server/stop!))
 
 (defn uberjar

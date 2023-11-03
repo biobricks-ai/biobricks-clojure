@@ -20,4 +20,4 @@
                (if-not conn
                  instance
                  (do (when-not (dtlv/closed? conn) (dtlv/close conn))
-                     (dissoc instance :conn))))})
+                   (dissoc instance :conn))))})

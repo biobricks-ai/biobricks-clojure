@@ -9,9 +9,9 @@
   [s]
   (if (string? s)
     (some-> s
-            not-empty
-            (str/split #"\n")
-            first)
+      not-empty
+      (str/split #"\n")
+      first)
     (pr-str s)))
 
 (defn signal!
@@ -23,28 +23,28 @@
   (let [{out ::ds/out, :as system} (ds/signal system signal-name)
         {:keys [error validation]} out]
     (cond (seq error) (throw (ex-info (str "Error during "
-                                           signal-name
-                                           (some->> error
-                                                    first
-                                                    val
-                                                    first
-                                                    val
-                                                    :message
-                                                    first-line
-                                                    (str ": ")))
-                                      out))
-          (seq validation) (throw (ex-info (str "Validation failed during "
-                                                signal-name
-                                                (some->> validation
-                                                         first
-                                                         val
-                                                         first
-                                                         val
-                                                         :message
-                                                         first-line
-                                                         (str ": ")))
-                                           out))
-          :else system)))
+                                        signal-name
+                                        (some->> error
+                                          first
+                                          val
+                                          first
+                                          val
+                                          :message
+                                          first-line
+                                          (str ": ")))
+                               out))
+      (seq validation) (throw (ex-info (str "Validation failed during "
+                                         signal-name
+                                         (some->> validation
+                                           first
+                                           val
+                                           first
+                                           val
+                                           :message
+                                           first-line
+                                           (str ": ")))
+                                out))
+      :else system)))
 
 (defn start!
   "Calls `(signal! system :donut.system/start)`."

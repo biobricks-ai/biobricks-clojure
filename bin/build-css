@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -eu
+
+tailwindcss -i ./bases/web-ui/resources/public/css/app.css -o ./bases/web-ui/resources/public/css/compiled.css "$@"

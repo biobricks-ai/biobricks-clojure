@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-clojure -M:antq "$@"
+clojure -M:antq \
+  --exclude=info.sunng/ring-jetty9-adapter \
+  "$@"

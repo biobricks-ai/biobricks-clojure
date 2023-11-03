@@ -53,7 +53,8 @@ jobs:
           ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo cp biobricks-web/biobricks-web.service /etc/systemd/system
           scp target/biobricks-web-"$HYPERFIDDLE_ELECTRIC_APP_VERSION".jar "$DEPLOY_USER"@"$DEPLOY_HOST":biobricks-web
           scp target/electric-version "$DEPLOY_USER"@"$DEPLOY_HOST":biobricks-web
-          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo systemctl daemon-reload && sudo systemctl restart biobricks-web
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo systemctl daemon-reload
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo systemctl restart biobricks-web
         env:
           DEPLOY_HOST: status-biobricks-ai
           DEPLOY_USER: admin

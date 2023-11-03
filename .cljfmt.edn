@@ -1,0 +1,4 @@
+; https://tonsky.me/blog/clojurefmt/
+{:paths ["bases" "components" "projects" "src-build"]
+ :indents {#re ".*" [[:inner 0]]}
+ :parallel? true}

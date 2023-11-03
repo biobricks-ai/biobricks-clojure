@@ -1,4 +1,5 @@
 .*
+!.cljfmt.edn
 !.editorconfig
 !.envrc
 !.gitignore

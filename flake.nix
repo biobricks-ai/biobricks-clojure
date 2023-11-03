@@ -20,7 +20,6 @@
             nodePackages.npm
             rlwrap # Used by clj
             pkgs-unstable.tailwindcss
-            zprint
           ];
         };
       });

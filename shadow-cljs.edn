@@ -7,10 +7,7 @@
           :output-dir "bases/web-ui/resources/public/js",
           :asset-path "/js",
           :modules {:main {:entries [biobricks.web-ui.api],
-                           :init-fn biobricks.web-ui.api/start!}},
-          :build-hooks [(shadow.cljs.build-report/hook
-                          {:output-to "target/build_report.html"})
-                        (biobricks.web-ui.api/rcf-shadow-hook)]},
+                           :init-fn biobricks.web-ui.api/start!}}}
     :prod {:asset-path "/js",
            :module-hash-names true,
            :modules {:main {:entries [biobricks.web-ui.api],

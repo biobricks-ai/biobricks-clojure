@@ -36,6 +36,9 @@ on startup)"
        :closure-defines {'hyperfiddle.electric-client/VERSION version}}]})
   (shadow-server/stop!))
 
+(defn build-css [_]
+  (b/process {:command-args ["bash" "bin/build-css"]}))
+
 (defn uberjar
   [{:keys [jar-name version optimize debug verbose],
     :or {version version, optimize true, debug false, verbose false}}]
@@ -45,6 +48,9 @@ on startup)"
   (clean-cljs nil)
   (build-client
     {:optimize optimize, :debug debug, :verbose verbose, :version version})
+  ; CSS should come after JS because Tailwind analyzes the classes in the JS
+  (println "Building CSS")
+  (build-css nil)
   (println "Bundling sources")
   (b/copy-dir {:src-dirs ["src" "resources"], :target-dir class-dir})
   (println "Compiling server. Version:" version)

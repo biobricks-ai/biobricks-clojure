@@ -271,9 +271,7 @@
                                                 instance
                                                 :brick-db)
                                               id)))
-                                (dom/text "Force brick info update"))))))
-      (ElementData. "repo" (e/server (pprint-str repo)))
-      (ElementData. "biobrick-files" (e/server (pprint-str biobrick-files))))))
+                                (dom/text "Force brick info update")))))))))
 
 (defn healthy?
   [repo]
@@ -391,22 +389,6 @@
             (dom/div (dom/props {:class "xl:pl-72"})
               (dom/main
                 (dom/props {:clas "lg:pr-96"})
-                (ElementData. "instance"
-                  (e/server (when datalevin-db
-                              (pprint-str instance))))
-                (ElementData. "schema"
-                  (e/server (when datalevin-db
-                              (pprint-str (into
-                                            (sorted-map)
-                                            (dtlv/schema
-                                              (datalevin-conn
-                                                system)))))))
-                (comment
-                         ;; Used for development
-                  (ElementData. "query"
-                    (e/server (when datalevin-db
-                                (pprint-str repos)))))
-                (ElementData. "ui-settings" (pprint-str ui-settings))
                 (SortFilterControls. ui-settings)
                 (Repos. repos-on-page)
                 (PageSelector. page num-pages)))))))))

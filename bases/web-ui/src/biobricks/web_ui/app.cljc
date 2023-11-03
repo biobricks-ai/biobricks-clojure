@@ -338,8 +338,10 @@
       (when (not= 1 i) (dom/text " | "))
       (dom/a (dom/on "click"
                (e/fn [_]
-                 (e/client (rfe/set-query #(assoc %
-                                             :page (str i))))))
+                 (e/client (rfe/set-query
+                             #(if (= 1 i)
+                                (dissoc % :page)
+                                (assoc % :page (str i)))))))
         (dom/props {:style {:cursor "pointer",
                             :font-weight (when (= i page) "bold")}})
         (dom/text i)))))

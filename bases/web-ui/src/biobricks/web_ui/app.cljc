@@ -123,10 +123,6 @@
 
 (e/defn ChevronRight [on-click] (ChevronBase. nil on-click))
 
-(e/defn ChevronDown
-  [on-click]
-  (ChevronBase. {:transform "rotate(90deg)"} on-click))
-
 (e/defn XRed
   []
   (svg/svg

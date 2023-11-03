@@ -8,6 +8,8 @@ on:
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +33,28 @@ jobs:
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
+          tags: tag:cd
+
+      - name: Set version
+        run: |
+          echo "HYPERFIDDLE_ELECTRIC_APP_VERSION=`git describe --tags --long --always --dirty`" >> $GITHUB_ENV
 
       - name: Build
         run: |
-          nix develop -c clojure -T:build uberjar
+          nix develop -c clojure -T:build uberjar :jar-name target/biobricks-web-"$HYPERFIDDLE_ELECTRIC_APP_VERSION".jar :version '"'$HYPERFIDDLE_ELECTRIC_APP_VERSION'"'
+          echo "$HYPERFIDDLE_ELECTRIC_APP_VERSION" > target/electric-version
+
+      - name: Deploy
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+          scp flake.* projects/biobricks-web/service/* "$DEPLOY_USER"@"$DEPLOY_HOST":biobricks-web
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" cd biobricks-web && nix build .#devShells.x86_64-linux.default
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo cp biobricks-web/biobricks-web.service /etc/systemd/system
+          scp target/biobricks-web-"$HYPERFIDDLE_ELECTRIC_APP_VERSION".jar "$DEPLOY_USER"@"$DEPLOY_HOST":biobricks-web
+          scp target/electric-version "$DEPLOY_USER"@"$DEPLOY_HOST":biobricks-web
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" sudo systemctl daemon-reload && sudo systemctl restart biobricks-web
+        env:
+          DEPLOY_HOST: status-biobricks-ai
+          DEPLOY_USER: admin
+

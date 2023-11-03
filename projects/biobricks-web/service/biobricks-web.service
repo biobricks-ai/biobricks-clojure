@@ -1,0 +1,13 @@
+[Unit]
+Description=BioBricks-Web
+After=network.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/biobricks-web
+ExecStart=/bin/bash run.sh
+Restart=always
+
+[Install]
+WantedBy=default.target

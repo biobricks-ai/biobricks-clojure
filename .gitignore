@@ -2,6 +2,7 @@
 !.cljfmt.edn
 !.editorconfig
 !.envrc
+!.git-blame-ignore-revs
 !.gitignore
 !.vscode
 

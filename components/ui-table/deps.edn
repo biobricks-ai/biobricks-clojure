@@ -1,0 +1,4 @@
+{:paths ["src"]
+ :deps {poly/electric-jetty {:local/root "../electric-jetty"}}
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {}}}}

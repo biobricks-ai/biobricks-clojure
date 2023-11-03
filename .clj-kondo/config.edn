@@ -1,0 +1,4 @@
+{:linters
+ {:consistent-alias
+  {:aliases
+   {biobricks.ui-table.ifc ui-table}}}}

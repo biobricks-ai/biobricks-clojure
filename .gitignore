@@ -1,4 +1,7 @@
 .*
+!.clj-kondo
+.clj-kondo/*
+!.clj-kondo/config.edn
 !.cljfmt.edn
 !.editorconfig
 !.envrc

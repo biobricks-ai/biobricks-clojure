@@ -33,4 +33,5 @@
         poly/process {:local/root "../../components/process"},
         poly/sys {:local/root "../../components/sys"},
         poly/tech-ml-parquet {:local/root "../../components/tech-ml-parquet"},
+        poly/ui-table {:local/root "../../components/ui-table"}
         poly/web-ui {:local/root "../../bases/web-ui"}}}

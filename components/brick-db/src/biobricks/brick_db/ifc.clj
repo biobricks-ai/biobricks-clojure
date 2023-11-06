@@ -188,7 +188,7 @@
 
 (comment
   (def instance
-    (-> @biobricks.web-ui.api/system
+    (-> @biobricks.web-ui.system/system
       :donut.system/instances
       :brick-data
       :brick-db))

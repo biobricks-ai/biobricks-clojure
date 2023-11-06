@@ -155,7 +155,7 @@
             (if (str/ends-with? md5 ".dir")
               (for [{:keys [md5 relpath]}
                     (list-dir config md5 :old-cache-location? (not hash))
-                    :let [m {:md5 md5, :path (str path relpath)}]]
+                    :let [m {:md5 md5, :path (str path (when-not (str/ends-with? path "/") "/") relpath)}]]
                 (if hash (assoc m :hash hash) m))
               [file-spec]))
     file-specs))

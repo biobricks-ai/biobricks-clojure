@@ -105,6 +105,9 @@
     "parquet" (RoundedBadge.
                 "text-indigo-400 bg-indigo-400/10 ring-indigo-400/30"
                 "Parquet")
+    "sqlite" (RoundedBadge.
+               "text-cyan-400 bg-cyan-400/10 ring-cyan-400/30"
+               "SQLite")
     (RoundedBadge. "text-gray-400 bg-gray-400/10 ring-gray-400/30" ext)))
 
 (e/defn ChevronBase

@@ -14,26 +14,6 @@
            [java.net BindException]
            [org.eclipse.jetty.server.handler.gzip GzipHandler]))
 
-(defn wrap-demo-router
-  "A basic path-based routing middleware"
-  [next-handler]
-  (fn [ring-req]
-    (case (:uri ring-req)
-      "/auth" (let [response (next-handler ring-req)]
-                (if (= 401 (:status response)) ; authenticated?
-                  response                     ; send response to trigger auth
-                                               ; prompt
-                  (-> (res/status response 302) ; redirect
-                    (res/header "Location"
-                      (get-in ring-req [:headers "referer"]))))) ; redirect
-                                                                             ; to
-                                                                             ; where
-                                                                             ; the
-                                                                             ; auth
-                                                                             ; originated
-      ;; For any other route, delegate to next middleware
-      (next-handler ring-req))))
-
 (defn template
   "Takes a `string` and a map of key-values `kvs`. Replace all instances of `$key$` by value in `string`"
   [string kvs]
@@ -139,7 +119,6 @@
                                                      ; default page file
     (wrap-resource resources-path) ; 4. serve static file from classpath
     (wrap-content-type) ; 3. detect content (e.g. for index.html)
-    (wrap-demo-router) ; 2. route
     (electric-websocket-middleware) ; 1. intercept electric websocket
     ))
 
@@ -148,10 +127,6 @@
   [server]
   (.setHandler server
     (doto (GzipHandler.)
-      #_(.setIncludedMimeTypes
-          (into-array ["text/css" "text/plain" "text/javascript"
-                       "application/javascript" "application/json"
-                       "image/svg+xml"])) ; only compress these
       (.setMinGzipSize 1024)
       (.setHandler (.getHandler server)))))
 

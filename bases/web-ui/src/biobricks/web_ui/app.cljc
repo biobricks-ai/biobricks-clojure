@@ -183,32 +183,33 @@
         brick-href (e/client
                      (rfe/href :biobrick
                        {:brick-name brick-name :org-name org-name}))]
-    (e/client
-      (dom/li
-        (dom/props
-          {:class
-           "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
-        (dom/div
-          (dom/props {:class "min-w-0 flex-auto"})
+    (when biobrick-files
+      (e/client
+        (dom/li
+          (dom/props
+            {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
           (dom/div
-            (dom/props {:class "flex items-center gap-x-3"})
-            (StatusCircle.
-              (cond (or (pos? health-check-failures) (seq missing-files)) false
-                (and (zero? health-check-failures) (seq extensions)) true))
-            (dom/h2 (dom/props
-                      {:class
-                       "min-w-0 text-sm font-semibold leading-6 text-white"})
-              (dom/a (dom/props {:class "flex gap-x-2" :href brick-href})
-                (dom/span (dom/props {:class "truncate"})
-                  (dom/text org-name))
-                (dom/span (dom/props {:class "text-gray-400"})
-                  (dom/text "/"))
-                (dom/span (dom/props {:class "whitespace-nowrap"})
-                  (dom/text brick-name)))))
-          (RepoSmallInfo. repo))
-        (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
-        (e/client (dom/a (dom/props {:href brick-href})
-                    (ChevronRight. nil)))))))
+            (dom/props {:class "min-w-0 flex-auto"})
+            (dom/div
+              (dom/props {:class "flex items-center gap-x-3"})
+              (StatusCircle.
+                (cond (or (pos? health-check-failures) (seq missing-files)) false
+                  (and (zero? health-check-failures) (seq extensions)) true))
+              (dom/h2 (dom/props
+                        {:class
+                         "min-w-0 text-sm font-semibold leading-6 text-white"})
+                (dom/a (dom/props {:class "flex gap-x-2" :href brick-href})
+                  (dom/span (dom/props {:class "truncate"})
+                    (dom/text org-name))
+                  (dom/span (dom/props {:class "text-gray-400"})
+                    (dom/text "/"))
+                  (dom/span (dom/props {:class "whitespace-nowrap"})
+                    (dom/text brick-name)))))
+            (RepoSmallInfo. repo))
+          (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
+          (e/client (dom/a (dom/props {:href brick-href})
+                      (ChevronRight. nil))))))))
 
 (e/defn Repos
   [repos]
@@ -255,58 +256,59 @@
                      set)
         missing-files (->> biobrick-files
                         (filter :biobrick-file/missing?))]
-    (e/client
-      (dom/li
-        (dom/props
-          {:class
-           "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
-        (dom/div
-          (dom/props {:class "min-w-0 flex-auto"})
+    (when biobrick-files
+      (e/client
+        (dom/li
+          (dom/props
+            {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
           (dom/div
-            (dom/props {:class "flex items-center gap-x-3"})
-            (StatusCircle.
-              (cond (or (pos? health-check-failures) (seq missing-files)) false
-                (and (zero? health-check-failures) (seq extensions)) true))
-            (dom/h2 (dom/props
-                      {:class
-                       "min-w-0 text-sm font-semibold leading-6 text-white"})
-              (dom/span (dom/props {:class "flex gap-x-2"})
-                (dom/span (dom/props {:class "truncate"})
-                  (dom/text org-name))
-                (dom/span (dom/props {:class "text-gray-400"})
-                  (dom/text "/"))
-                (dom/span (dom/props {:class "whitespace-nowrap"})
-                  (dom/text brick-name)))))
-          (RepoSmallInfo. repo))
-        (e/for [ext (sort extensions)] (FileExtensionBadge. ext)))
-      (dom/li
-        (dom/props
-          {:class
-           "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
-        (dom/div (dom/props {:class "min-w-0 flex-auto text-gray-300"})
-          (dom/p (dom/text description))
-          (when (some-> health-check-failures
-                  pos?)
-            (let [fails (->> health-check-data
-                          edn/read-string
-                          (me/filter-vals (comp not true?)))]
-              (dom/div (dom/props {:style {:margin-top "1em"}})
-                (dom/ul (e/for [[_ v] fails]
-                          (dom/li (XRed.) (dom/text v)))))))
-          (when (seq missing-files)
-            (dom/p (XRed.)
-              (dom/text "Missing "
-                (count missing-files)
-                (if (= 1 (count missing-files))
-                  " file or directory"
-                  " files or directories")
-                " on S3 remote:"))
-            (dom/ul (dom/props {:class "list-disc pl-5"})
-              (e/for [{:biobrick-file/keys [directory? path]}
-                      missing-files]
-                (dom/li (dom/text path (when directory? "/"))))))))
-      (when (seq brick-data-files)
-        (BrickFiles. brick-data-files)))))
+            (dom/props {:class "min-w-0 flex-auto"})
+            (dom/div
+              (dom/props {:class "flex items-center gap-x-3"})
+              (StatusCircle.
+                (cond (or (pos? health-check-failures) (seq missing-files)) false
+                  (and (zero? health-check-failures) (seq extensions)) true))
+              (dom/h2 (dom/props
+                        {:class
+                         "min-w-0 text-sm font-semibold leading-6 text-white"})
+                (dom/span (dom/props {:class "flex gap-x-2"})
+                  (dom/span (dom/props {:class "truncate"})
+                    (dom/text org-name))
+                  (dom/span (dom/props {:class "text-gray-400"})
+                    (dom/text "/"))
+                  (dom/span (dom/props {:class "whitespace-nowrap"})
+                    (dom/text brick-name)))))
+            (RepoSmallInfo. repo))
+          (e/for [ext (sort extensions)] (FileExtensionBadge. ext)))
+        (dom/li
+          (dom/props
+            {:class
+             "relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8"})
+          (dom/div (dom/props {:class "min-w-0 flex-auto text-gray-300"})
+            (dom/p (dom/text description))
+            (when (some-> health-check-failures
+                    pos?)
+              (let [fails (->> health-check-data
+                            edn/read-string
+                            (me/filter-vals (comp not true?)))]
+                (dom/div (dom/props {:style {:margin-top "1em"}})
+                  (dom/ul (e/for [[_ v] fails]
+                            (dom/li (XRed.) (dom/text v)))))))
+            (when (seq missing-files)
+              (dom/p (XRed.)
+                (dom/text "Missing "
+                  (count missing-files)
+                  (if (= 1 (count missing-files))
+                    " file or directory"
+                    " files or directories")
+                  " on S3 remote:"))
+              (dom/ul (dom/props {:class "list-disc pl-5"})
+                (e/for [{:biobrick-file/keys [directory? path]}
+                        missing-files]
+                  (dom/li (dom/text path (when directory? "/"))))))))
+        (when (seq brick-data-files)
+          (BrickFiles. brick-data-files))))))
 
 (defn healthy?
   [repo]

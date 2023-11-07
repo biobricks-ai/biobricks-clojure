@@ -48,6 +48,7 @@
         poly/datalevin {:local/root "components/datalevin"},
         poly/electric-jetty {:local/root "components/electric-jetty"},
         poly/github {:local/root "components/github"},
+        poly/log {:local/root "components/log"}
         poly/process {:local/root "components/process"},
         poly/sys {:local/root "components/sys"},
         poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"},

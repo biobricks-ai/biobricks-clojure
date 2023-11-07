@@ -1,4 +1,6 @@
 {:linters
+ {:clojure-lsp/unused-public-var
+  {:exclude #{biobricks.log.ifc}}}
  {:consistent-alias
   {:aliases
    {biobricks.ui-table.ifc ui-table}}}}

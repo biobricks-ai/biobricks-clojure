@@ -203,6 +203,37 @@
     (.setDaemon true)
     .start))
 
+(defn check-file
+  [{:keys [datalevin-conn]}
+   {:db/keys [id], :biobrick-file/keys [dvc-url]}]
+  (when-let [size (some-> (hc/head dvc-url)
+                    :headers
+                    (get "content-length")
+                    parse-long)]
+    (dtlv/transact! datalevin-conn
+      [{:db/id id :biobrick-file/size size}])))
+
+(defn check-files
+  [{:as instance, :keys [datalevin-conn]}]
+  (let
+    [files (dtlv/q
+             '[:find (pull ?e [:db/id :biobrick-file/dvc-url])
+               :where [?e :biobrick-file/biobrick]
+               [(missing? $ ?e :biobrick-file/size)]
+               (or
+                 [(missing? $ ?e :biobrick-file/missing?)]
+                 [?e :biobrick-file/missing? false])]
+             (dtlv/db datalevin-conn))]
+    (doseq [[file] files] (check-file instance file))))
+
+(defn file-poller
+  [{:as instance, :keys [file-poll-interval-ms]}]
+  (doto (Thread. #(run-every-ms file-poll-interval-ms
+                    (fn [] (check-files instance))
+                    prn))
+    (.setDaemon true)
+    .start))
+
 (defn component
   [config]
   {::ds/config config,
@@ -210,6 +241,7 @@
                 (or instance
                   (-> config
                     (assoc :brick-poller (brick-poller config)
+                      :file-poller (file-poller config)
                       :github-poller (github-poller config))))),
    ::ds/stop (fn [{::ds/keys [instance],
                    {:keys [brick-poller github-poller]} ::ds/instance}]

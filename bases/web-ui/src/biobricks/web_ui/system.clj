@@ -26,6 +26,7 @@
                  {:bricks-path "bricks",
                   :datalevin-conn (ds/local-ref [:local-datalevin :conn]),
                   :brick-poll-interval-ms (* 1000 15),
+                  :file-poll-interval-ms (* 1000 15)
                   :github-org-name "biobricks-ai",
                   :github-poll-interval-ms (* 1000 60 5),
                   :github-token (github/get-token-from-env),

@@ -7,6 +7,7 @@
             [clojure.string :as str]
             [contrib.str :refer [empty->nil pprint-str]]
             #?(:clj [datalevin.core :as dtlv])
+            [heroicons.electric.v24.outline :as ho]
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-svg :as svg]
@@ -208,7 +209,7 @@
     (ui-table/Container.
       "Files"
       (e/fn []
-        (ui-table/Head. ["Path" "Size" "Link"]))
+        (ui-table/Head. ["Path" "Size" "Download"]))
       (e/fn []
         (ui-table/Body.
           (e/for [{:biobrick-file/keys [dvc-url path size]}
@@ -222,7 +223,7 @@
                (e/server (some-> size humanize/filesize))
                (e/fn []
                  (dom/a (dom/props {:href dvc-url :target "_blank"})
-                   (dom/text "Download")))])))))))
+                   (ho/arrow-down-tray (dom/props {:style {:width "1em"}}))))])))))))
 
 (e/defn BioBrick
   [[{:biobrick/keys [data-bytes health-check-data health-check-failures],

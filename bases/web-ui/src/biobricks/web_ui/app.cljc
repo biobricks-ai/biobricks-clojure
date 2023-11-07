@@ -140,7 +140,7 @@
 
 (e/defn RepoSmallInfo
   [{:biobrick/keys [data-bytes]
-    :git-repo/keys [updated-at]}]
+    :git-repo/keys [html-url updated-at]}]
   (e/client
     (dom/div
       (dom/props
@@ -154,7 +154,12 @@
       (when updated-at
         (dom/p (dom/props {:class "whitespace-nowrap"})
           (dom/text "Updated "
-            (e/server (date-str updated-at now))))))))
+            (e/server (date-str updated-at now))))
+        (DotDivider.))
+      (dom/a (dom/props {:href html-url :target "_blank"})
+        (dom/text "GitHub ")
+        (ho/arrow-top-right-on-square
+          (dom/props {:style {:display "inline" :width "1em"}}))))))
 
 ; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
@@ -199,8 +204,7 @@
                 (dom/span (dom/props {:class "text-gray-400"})
                   (dom/text "/"))
                 (dom/span (dom/props {:class "whitespace-nowrap"})
-                  (dom/text brick-name))
-                (dom/span (dom/props {:class "absolute inset-0"})))))
+                  (dom/text brick-name)))))
           (RepoSmallInfo. repo))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
         (e/client (dom/a (dom/props {:href brick-href})
@@ -272,8 +276,7 @@
                 (dom/span (dom/props {:class "text-gray-400"})
                   (dom/text "/"))
                 (dom/span (dom/props {:class "whitespace-nowrap"})
-                  (dom/text brick-name))
-                (dom/span (dom/props {:class "absolute inset-0"})))))
+                  (dom/text brick-name)))))
           (RepoSmallInfo. repo))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext)))
       (dom/li

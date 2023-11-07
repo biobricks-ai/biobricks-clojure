@@ -385,11 +385,7 @@
 (e/defn ReposList
   []
   (e/server
-    (let [instance (-> system
-                     :donut.system/instances
-                     :web-ui
-                     :app)
-          {:keys [filter-opts sort-by-opt]} (e/client ui-settings)
+    (let [{:keys [filter-opts sort-by-opt]} (e/client ui-settings)
           page (e/client (or (some-> router-flow
                                :query-params
                                :page

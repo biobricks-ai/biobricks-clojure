@@ -165,11 +165,10 @@
 (e/defn Repo
   [[{:as repo
      :biobrick/keys [health-check-failures]
-     :git-repo/keys [full-name]} biobrick-file-ids]]
+     :git-repo/keys [full-name]}
+    biobrick-files]]
   (let [[org-name brick-name] (e/server (str/split full-name
                                           (re-pattern "\\/")))
-        biobrick-files (e/server
-                         (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
         brick-data-files (->> biobrick-files
                            (remove #(or (:biobrick-file/directory? %)
                                       (:biobrick-file/missing? %)
@@ -397,7 +396,8 @@
                         (pred %) true
                         :else (recur more)))
           start (System/nanoTime)
-          repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :where
+          repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
+                               :where
                                [?e :git-repo/is-biobrick? true]
                                [?file :biobrick-file/biobrick ?e]]
                        datalevin-db)
@@ -407,14 +407,15 @@
                             datalevin-db)))
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
-                    (filter (comp #(and (:git-repo/is-biobrick? %)
-                                     (filter-f %))
-                              first))
+                    (filter (comp filter-f first))
                     (sort-by (comp f first))
                     ((or g identity))))
           repos-on-page (->> repos
                           (drop (* 10 (dec page)))
-                          (take 10))
+                          (take 10)
+                          (mapv (fn [[repo files]]
+                                  [repo
+                                   (dtlv/pull-many datalevin-db '[*] files)])))
           num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))
           data-ms (quot (- (System/nanoTime) start) 1000000)]
       (when datalevin-db

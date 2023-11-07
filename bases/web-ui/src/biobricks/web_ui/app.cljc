@@ -396,6 +396,7 @@
                       (cond (nil? pred) false
                         (pred %) true
                         :else (recur more)))
+          start (System/nanoTime)
           repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :where
                                [?e :git-repo/is-biobrick? true]
                                [?file :biobrick-file/biobrick ?e]]
@@ -414,9 +415,11 @@
           repos-on-page (->> repos
                           (drop (* 10 (dec page)))
                           (take 10))
-          num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))]
+          num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))
+          data-ms (quot (- (System/nanoTime) start) 1000000)]
       (when datalevin-db
         (e/client
+          (js/console.log "Data loaded in" data-ms "ms")
           (dom/link (dom/props {:rel "stylesheet", :href "/css/compiled.css"}))
           (dom/div
             (dom/div (dom/props {:class "xl:pl-72"})

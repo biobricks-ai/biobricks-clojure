@@ -138,10 +138,29 @@
        "align-middle inline-block h-5 w-5 stroke-red-700/75 group-hover:stroke-red-700/100"})
     (svg/path (dom/props {:d "M4 4l6 6m0-6l-6 6", :stroke-width "1.5"}))))
 
+(e/defn RepoSmallInfo
+  [{:biobrick/keys [data-bytes]
+    :git-repo/keys [updated-at]}]
+  (e/client
+    (dom/div
+      (dom/props
+        {:class
+         "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
+      (when (some-> data-bytes
+              pos?)
+        (dom/p (dom/props {:class "whitespace-nowrap"})
+          (dom/text (e/server (humanize/filesize data-bytes))))
+        (DotDivider.))
+      (when updated-at
+        (dom/p (dom/props {:class "whitespace-nowrap"})
+          (dom/text "Updated "
+            (e/server (date-str updated-at now))))))))
+
 ; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
-  [[{:biobrick/keys [data-bytes health-check-failures],
-     :git-repo/keys [full-name updated-at]} biobrick-file-ids]]
+  [[{:as repo
+     :biobrick/keys [health-check-failures]
+     :git-repo/keys [full-name]} biobrick-file-ids]]
   (let [[org-name brick-name] (e/server (str/split full-name
                                           (re-pattern "\\/")))
         biobrick-files (e/server
@@ -182,19 +201,7 @@
                 (dom/span (dom/props {:class "whitespace-nowrap"})
                   (dom/text brick-name))
                 (dom/span (dom/props {:class "absolute inset-0"})))))
-          (dom/div
-            (dom/props
-              {:class
-               "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
-            (when (some-> data-bytes
-                    pos?)
-              (dom/p (dom/props {:class "whitespace-nowrap"})
-                (dom/text (e/server (humanize/filesize data-bytes))))
-              (DotDivider.))
-            (when updated-at
-              (dom/p (dom/props {:class "whitespace-nowrap"})
-                (dom/text "Updated "
-                  (e/server (date-str updated-at now)))))))
+          (RepoSmallInfo. repo))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext))
         (e/client (dom/a (dom/props {:href brick-href})
                     (ChevronRight. nil)))))))
@@ -226,8 +233,9 @@
                    (ho/arrow-down-tray (dom/props {:style {:width "1em"}}))))])))))))
 
 (e/defn BioBrick
-  [[{:biobrick/keys [data-bytes health-check-data health-check-failures],
-     :git-repo/keys [description full-name updated-at]}
+  [[{:as repo
+     :biobrick/keys [health-check-data health-check-failures]
+     :git-repo/keys [description full-name]}
     biobrick-file-ids]]
   (let [[org-name brick-name] (e/server (str/split full-name
                                           (re-pattern "\\/")))
@@ -266,19 +274,7 @@
                 (dom/span (dom/props {:class "whitespace-nowrap"})
                   (dom/text brick-name))
                 (dom/span (dom/props {:class "absolute inset-0"})))))
-          (dom/div
-            (dom/props
-              {:class
-               "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
-            (when (some-> data-bytes
-                    pos?)
-              (dom/p (dom/props {:class "whitespace-nowrap"})
-                (dom/text (e/server (humanize/filesize data-bytes))))
-              (DotDivider.))
-            (when updated-at
-              (dom/p (dom/props {:class "whitespace-nowrap"})
-                (dom/text "Updated "
-                  (e/server (date-str updated-at now)))))))
+          (RepoSmallInfo. repo))
         (e/for [ext (sort extensions)] (FileExtensionBadge. ext)))
       (dom/li
         (dom/props

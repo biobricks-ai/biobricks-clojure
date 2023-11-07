@@ -2,11 +2,11 @@
   (:require [babashka.fs :as fs]
             [biobricks.brick-repo.ifc :as brick-repo]
             [biobricks.github.ifc :as github]
+            [biobricks.log.ifc :as log]
             [biobricks.process.ifc :as p]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.tools.logging.readable :as log]
             [datalevin.core :as dtlv]
             [donut.system :as-alias ds]
             [hato.client :as hc]
@@ -205,11 +205,13 @@
 
 (defn check-file
   [{:keys [datalevin-conn]}
-   {:db/keys [id], :biobrick-file/keys [dvc-url]}]
+   {:db/keys [id], :biobrick-file/keys [dvc-url path]}]
+  (log/infof "Fetching size of %s %s" dvc-url path)
   (when-let [size (some-> (hc/head dvc-url)
                     :headers
                     (get "content-length")
                     parse-long)]
+    (log/infof "Fetched size of %s (%s)" dvc-url size)
     (dtlv/transact! datalevin-conn
       [{:db/id id :biobrick-file/size size}])))
 
@@ -217,7 +219,7 @@
   [{:as instance, :keys [datalevin-conn]}]
   (let
     [files (dtlv/q
-             '[:find (pull ?e [:db/id :biobrick-file/dvc-url])
+             '[:find (pull ?e [:db/id :biobrick-file/dvc-url :biobrick-file/path])
                :where [?e :biobrick-file/biobrick]
                [(missing? $ ?e :biobrick-file/size)]
                (or

@@ -484,7 +484,7 @@
                            repo-name))
                  first)]
       (e/client (dom/link (dom/props {:rel "stylesheet",
-                                      :href "/css/compiled.css"}))
+                                      :href (str "/css/compiled.css?v=" (e/server (System/getProperty "HYPERFIDDLE_ELECTRIC_SERVER_VERSION")))}))
         (dom/div (dom/div (dom/props {:class "xl:pl-72"})
                    (dom/main (dom/props {:clas "lg:pr-96"})
                      (BioBrick. repo))))))))

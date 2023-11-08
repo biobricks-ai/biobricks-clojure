@@ -26,4 +26,4 @@
     (when brick
       {:status 200
        :headers {"Content-Type" "image/svg+xml"}
-       :body (-> svg-file io/resource io/file)})))
+       :body (-> svg-file io/resource io/input-stream)})))

@@ -1,6 +1,7 @@
 (ns biobricks.web-ui.api
   (:require hashp.core
             [biobricks.electric-jetty.ifc :as electric-jetty]
+            [biobricks.web-ui.api.ring :as ring]
             [biobricks.web-ui.system :as system]
             [clojure.java.io :as io]
             [shadow.cljs.devtools.config :as shadow-config]))
@@ -23,16 +24,22 @@
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
 
 (def electric-server-config
-  {:host "0.0.0.0", :port 4071, :resources-path "public"})
+  {:host "0.0.0.0"
+   :port 4071
+   :resources-path "public"})
 
 (defn main
   [& _args]
   (println "Starting Electric compiler and server...")
   (@shadow-start! (load-cljs-edn)) ; serves index.html as well
   (@shadow-watch :dev) ; depends on shadow server
-  (system/start-system!)
+  (let [system (system/start-system!)
+        instance (-> system :donut.system/instances :web-ui :app)]
   ; Shadow loads the app here, such that it shares memory with server.
-  (def server (electric-jetty/start-server! electric-server-config))
+    (def server (-> electric-server-config
+                  (assoc :extra-middleware [ring/wrap-routes
+                                            #(ring/wrap-instance % instance)])
+                  electric-jetty/start-server!)))
   (comment
     (.stop server)))
 

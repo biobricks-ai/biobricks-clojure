@@ -111,16 +111,21 @@
   (-> (res/not-found "Not found")
     (res/content-type "text/plain")))
 
+(defn wrap-extra-middleware [handler extra-middleware]
+  (let [[f & more] extra-middleware]
+    (if (seq extra-middleware)
+      (recur (f handler) more)
+      handler)))
+
 (defn http-middleware
-  [resources-path manifest-path]
+  [resources-path manifest-path & [extra-middleware]]
   ;; these compose as functions, so are applied bottom up
   (-> not-found-handler
-    (wrap-index-page resources-path manifest-path) ; 5. otherwise fallback to
-                                                     ; default page file
-    (wrap-resource resources-path) ; 4. serve static file from classpath
-    (wrap-content-type) ; 3. detect content (e.g. for index.html)
-    (electric-websocket-middleware) ; 1. intercept electric websocket
-    ))
+    (wrap-index-page resources-path manifest-path)
+    (wrap-resource resources-path)
+    (wrap-extra-middleware extra-middleware)
+    wrap-content-type
+    electric-websocket-middleware))
 
 (defn- add-gzip-handler
   "Makes Jetty server compress responses. Optional but recommended."
@@ -131,13 +136,13 @@
       (.setHandler (.getHandler server)))))
 
 (defn start-server!
-  [{:keys [port resources-path manifest-path],
+  [{:keys [extra-middleware port resources-path manifest-path],
     :or {port 8080,
          resources-path "public",
          manifest-path "public/js/manifest.edn"},
     :as config}]
   (try
-    (let [server (ring/run-jetty (http-middleware resources-path manifest-path)
+    (let [server (ring/run-jetty (http-middleware resources-path manifest-path extra-middleware)
                    (merge {:port port,
                            :join? false,
                            :configurator add-gzip-handler}

@@ -2,6 +2,7 @@
   (:require #?(:clj [babashka.fs :as fs])
             #?(:clj [biobricks.brick-db.ifc :as brick-db])
             [biobricks.ui-table.ifc :as ui-table]
+            [biobricks.web-ui.api.routes :as routes]
             #?(:clj [clj-commons.humanize :as humanize])
             [clojure.edn :as edn]
             [clojure.string :as str]
@@ -50,9 +51,7 @@
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
-(def router
-  (rr/router [["/" ["" :home]]
-              ["/u" ["/:org-name" ["/:brick-name" :biobrick]]]]))
+(def router (rr/router routes/routes))
 
 #?(:cljs (e/def router-flow
            (->> (m/observe (fn [!] (rfe/start! router ! {:use-fragment false})))

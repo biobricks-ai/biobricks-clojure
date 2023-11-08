@@ -145,9 +145,11 @@
           final-port (-> server
                        (.getConnectors)
                        first
-                       (.getPort))]
+                       (.getPort))
+          {:keys [host]} config
+          app-host (if (= "0.0.0.0" host) "localhost" host)]
       (println "\n👉 App server available at"
-        (str "http://" (:host config) ":" final-port "\n"))
+        (str "http://" app-host ":" final-port "\n"))
       server)
     (catch IOException err
       (if (instance? BindException (ex-cause err)) ; port is already taken,

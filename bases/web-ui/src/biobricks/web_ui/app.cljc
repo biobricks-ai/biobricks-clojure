@@ -235,6 +235,40 @@
                  (dom/a (dom/props {:href dvc-url :target "_blank"})
                    (ho/arrow-down-tray (dom/props {:style {:width "1em"}}))))])))))))
 
+(e/defn BrickBadge
+  [full-name]
+  (e/client
+    (let [!copied? (atom false)
+          copied? (e/watch !copied?)
+          [org-name brick-name] (e/server (str/split full-name
+                                            (re-pattern "\\/")))
+          brick-path (-> router
+                       (rr/match-by-name :biobrick {:brick-name brick-name :org-name org-name})
+                       rr/match->path)
+          svg-path (-> router
+                    (rr/match-by-name :brick-badge-health {:brick-name brick-name :org-name org-name})
+                    rr/match->path)]
+      (dom/div
+        (dom/img (dom/props {:src svg-path}))
+        (dom/input
+          (dom/props {:class "mt-4"
+                      :disabled true
+                      :id "badge-health-markdown"
+                      :value (str "[![BioBricks](https://status.biobricks.ai" svg-path
+                               ")](https://status.biobricks.ai" brick-path ")")}))
+        (dom/button
+          (dom/props {:class "rounded bg-white/10 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-white/20"
+                      :type "button"})
+          (dom/on "click"
+            (e/fn [_]
+              (let [input (js/document.getElementById "badge-health-markdown")
+                    s (.-value input)]
+                (.select input)
+                (.setSelectionRange input 0 (count s))
+                (js/navigator.clipboard.writeText s)
+                (reset! !copied? true))))
+          (dom/text (if copied? "Copied!" "Copy Markdown")))))))
+
 (e/defn BioBrick
   [[{:as repo
      :biobrick/keys [health-check-data health-check-failures]
@@ -306,7 +340,8 @@
                         missing-files]
                   (dom/li (dom/text path (when directory? "/"))))))))
         (when (seq brick-data-files)
-          (BrickFiles. brick-data-files))))))
+          (BrickFiles. brick-data-files))
+        (BrickBadge. full-name)))))
 
 (defn healthy?
   [repo]

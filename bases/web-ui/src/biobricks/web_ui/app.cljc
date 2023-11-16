@@ -368,37 +368,50 @@
 
 (e/defn SortFilterControls
   [{:keys [sort-by-opt]}]
-  (dom/select (dom/on "change"
-                (e/fn [e]
-                  (e/client (swap! !ui-settings update-ui-settings!
-                              assoc
-                              :sort-by-opt
-                              (-> e
-                                .-target
-                                .-value)))))
-    (e/for [[k [label]] sort-options]
-      (dom/option (dom/props {:selected (= sort-by-opt k), :value k})
-        (dom/text label))))
-  (dom/ul (dom/props {:class "text-gray-300"})
-    (e/for [[k [label]] filter-options]
-      (let [id (str "SortFilterControls-filter-" k)]
-        (dom/li (dom/input (dom/on "change"
-                             (e/fn [e]
-                               (e/client (let [v (-> e
-                                                   .-target
-                                                   .-checked)
-                                               f (if v conj disj)]
-                                           (swap! !ui-settings
-                                             update-ui-settings!
-                                             update
-                                             :filter-opts
-                                             f
-                                             k)))))
-                  (dom/props {:id id,
-                              :type "checkbox",
-                              :checked (contains? filter-options
-                                         k)}))
-          (dom/label (dom/props {:for id}) (dom/text label)))))))
+  (let [{:keys [filter-opts]} ui-settings]
+    (dom/select (dom/on "change"
+                  (e/fn [e]
+                    (e/client (swap! !ui-settings update-ui-settings!
+                                assoc
+                                :sort-by-opt
+                                (-> e
+                                  .-target
+                                  .-value)))))
+      (e/for [[k [label]] sort-options]
+        (dom/option (dom/props {:selected (= sort-by-opt k), :value k})
+          (dom/text label))))
+    (dom/div
+      (dom/props {:class "items-center"})
+      (e/for [[k [label]] filter-options]
+        (let [id (str "SortFilterControls-filter-" k)
+              checked? (contains? filter-opts k)]
+          (dom/div
+            (dom/on "click"
+              (e/fn [_]
+                (e/client (let [f (if checked? disj conj)]
+                            (swap! !ui-settings
+                              update-ui-settings!
+                              update
+                              :filter-opts
+                              f
+                              k)))))
+            (dom/button
+              (dom/props {:aria-checked checked?
+                          :aria-labelledby (str id "-label")
+                          :class (str
+                                   (if checked? "bg-indigo-600" "bg-gray-200")
+                                   " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
+                          :role "switch"
+                          :type "button"})
+              (dom/span
+                (dom/props {:aria-hidden true
+                            :class (str
+                                     (if checked? "translate-x-5" "translate-x-0")
+                                     " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
+            (dom/span
+              (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
+                          :id (str id "-label")})
+              (dom/text label))))))))
 
 (e/defn PageSelector
   [page num-pages]

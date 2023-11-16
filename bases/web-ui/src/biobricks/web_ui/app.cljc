@@ -249,6 +249,7 @@
                     (rr/match-by-name :brick-badge-health {:brick-name brick-name :org-name org-name})
                     rr/match->path)]
       (dom/div
+        (dom/props {:class "lg:px-8 sm:px-6 px-4"})
         (dom/img (dom/props {:src svg-path}))
         (dom/input
           (dom/props {:class "mt-4"

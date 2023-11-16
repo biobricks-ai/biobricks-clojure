@@ -47,7 +47,7 @@
             .start)))
 
 #?(:cljs (defonce !ui-settings
-           (atom {:filter-opts #{"healthy" "unhealthy"},
+           (atom {:filter-opts {:health #{"healthy" "unhealthy"}}
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
@@ -350,9 +350,9 @@
              :biobrick/health-check-failures
              zero?)))
 
-(def filter-options
-  {"healthy" ["Healthy" healthy?],
-   "unhealthy" ["Unhealthy" (complement healthy?)]})
+(def health-filter-options
+  {"healthy" ["Healthy" (comp healthy? first)]
+   "unhealthy" ["Unhealthy" (comp (complement healthy?) first)]})
 
 (def sort-options
   {"size" ["Size"
@@ -368,7 +368,7 @@
 
 (e/defn SortFilterControls
   [{:keys [sort-by-opt]}]
-  (let [{:keys [filter-opts]} ui-settings]
+  (let [{:keys [health]} (:filter-opts ui-settings)]
     (dom/select (dom/on "change"
                   (e/fn [e]
                     (e/client (swap! !ui-settings update-ui-settings!
@@ -382,17 +382,17 @@
           (dom/text label))))
     (dom/div
       (dom/props {:class "items-center"})
-      (e/for [[k [label]] filter-options]
+      (e/for [[k [label]] health-filter-options]
         (let [id (str "SortFilterControls-filter-" k)
-              checked? (contains? filter-opts k)]
+              checked? (contains? health k)]
           (dom/div
             (dom/on "click"
               (e/fn [_]
                 (e/client (let [f (if checked? disj conj)]
                             (swap! !ui-settings
                               update-ui-settings!
-                              update
-                              :filter-opts
+                              update-in
+                              [:filter-opts :health]
                               f
                               k)))))
             (dom/button
@@ -433,16 +433,17 @@
   []
   (e/server
     (let [{:keys [filter-opts sort-by-opt]} (e/client ui-settings)
+          {:keys [health]} filter-opts
           page (e/client (or (some-> router-flow
                                :query-params
                                :page
                                parse-long)
                            1))
-          filter-preds (mapv (comp second filter-options) filter-opts)
-          filter-f #(loop [[pred & more] filter-preds]
-                      (cond (nil? pred) false
-                        (pred %) true
-                        :else (recur more)))
+          health-filter-preds (mapv (comp second health-filter-options) health)
+          health-filter-f #(loop [[pred & more] health-filter-preds]
+                             (cond (nil? pred) false
+                               (pred %) true
+                               :else (recur more)))
           start (System/nanoTime)
           repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
                                :where
@@ -455,7 +456,7 @@
                             datalevin-db)))
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
-                    (filter (comp filter-f first))
+                    (filter health-filter-f)
                     (sort-by (comp f first))
                     ((or g identity))))
           repos-on-page (->> repos

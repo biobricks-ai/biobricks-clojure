@@ -47,7 +47,8 @@
             .start)))
 
 #?(:cljs (defonce !ui-settings
-           (atom {:filter-opts {:health #{"healthy" "unhealthy"}}
+           (atom {:filter-opts {:file-type #{"hdt" "other" "parquet" "sqlite"}
+                                :health #{"healthy" "unhealthy"}}
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 
@@ -354,6 +355,25 @@
   {"healthy" ["Healthy" (comp healthy? first)]
    "unhealthy" ["Unhealthy" (comp (complement healthy?) first)]})
 
+(defn file-type-filter [file-type]
+  (fn [[_ & files]]
+    (when (seq files) (prn (map (comp :biobrick-file/extension first) files)))
+    (some
+      #(= file-type (:biobrick-file/extension (first %)))
+      files)))
+
+(defn other-file-type-filter [[_ & files]]
+  (or (empty? files)
+    (every?
+      #(not (#{"hdt" "parquet" "sqlite"} (:biobrick-file/extension (first %))))
+      files)))
+
+(def file-type-filter-options
+  {"hdt" ["HDT" (file-type-filter "hdt")]
+   "other" ["Other" other-file-type-filter]
+   "parquet" ["Parquet" (file-type-filter "parquet")]
+   "sqlite" ["SQLite" (file-type-filter "sqlite")]})
+
 (def sort-options
   {"size" ["Size"
            #(some-> %
@@ -368,7 +388,7 @@
 
 (e/defn SortFilterControls
   [{:keys [sort-by-opt]}]
-  (let [{:keys [health]} (:filter-opts ui-settings)]
+  (let [{:keys [file-type health]} (:filter-opts ui-settings)]
     (dom/select (dom/on "change"
                   (e/fn [e]
                     (e/client (swap! !ui-settings update-ui-settings!
@@ -411,6 +431,39 @@
             (dom/span
               (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
                           :id (str id "-label")})
+              (dom/text label))))))
+    (dom/div (dom/props {:class "mt-4"}))
+    (dom/div
+      (dom/props {:class "items-center"})
+      (e/for [[k [label]] file-type-filter-options]
+        (let [id (str "SortFileTypeFilterControls-filter-" k)
+              checked? (contains? file-type k)]
+          (dom/div
+            (dom/on "click"
+              (e/fn [_]
+                (e/client (let [f (if checked? disj conj)]
+                            (swap! !ui-settings
+                              update-ui-settings!
+                              update-in
+                              [:filter-opts :file-type]
+                              f
+                              k)))))
+            (dom/button
+              (dom/props {:aria-checked checked?
+                          :aria-labelledby (str id "-label")
+                          :class (str
+                                   (if checked? "bg-indigo-600" "bg-gray-200")
+                                   " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
+                          :role "switch"
+                          :type "button"})
+              (dom/span
+                (dom/props {:aria-hidden true
+                            :class (str
+                                     (if checked? "translate-x-5" "translate-x-0")
+                                     " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
+            (dom/span
+              (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
+                          :id (str id "-label")})
               (dom/text label))))))))
 
 (e/defn PageSelector
@@ -433,12 +486,17 @@
   []
   (e/server
     (let [{:keys [filter-opts sort-by-opt]} (e/client ui-settings)
-          {:keys [health]} filter-opts
+          {:keys [file-type health]} filter-opts
           page (e/client (or (some-> router-flow
                                :query-params
                                :page
                                parse-long)
                            1))
+          file-type-filter-preds (mapv (comp second file-type-filter-options) file-type)
+          file-type-filter-f #(loop [[pred & more] file-type-filter-preds]
+                                (cond (nil? pred) false
+                                  (pred %) true
+                                  :else (recur more)))
           health-filter-preds (mapv (comp second health-filter-options) health)
           health-filter-f #(loop [[pred & more] health-filter-preds]
                              (cond (nil? pred) false
@@ -458,13 +516,15 @@
                   (->> repos
                     (filter health-filter-f)
                     (sort-by (comp f first))
-                    ((or g identity))))
+                    ((or g identity))
+                    (map (fn [[repo files]]
+                           [repo
+                            (dtlv/pull-many datalevin-db '[*] files)]))
+                    (filter file-type-filter-f)))
           repos-on-page (->> repos
                           (drop (* 10 (dec page)))
                           (take 10)
-                          (mapv (fn [[repo files]]
-                                  [repo
-                                   (dtlv/pull-many datalevin-db '[*] files)])))
+                          vec)
           num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))
           data-ms (quot (- (System/nanoTime) start) 1000000)]
       (when datalevin-db

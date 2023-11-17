@@ -272,25 +272,22 @@
           (dom/text (if copied? "Copied!" "Copy Markdown")))))))
 
 (e/defn BioBrick
-  [[{:as repo
+  [{:as repo
      :biobrick/keys [health-check-data health-check-failures]
      :git-repo/keys [description full-name]}
-    biobrick-file-ids]]
-  (let [[org-name brick-name] (e/server (str/split full-name
-                                          (re-pattern "\\/")))
-        biobrick-files (e/server
-                         (dtlv/pull-many datalevin-db '[*] biobrick-file-ids))
-        brick-data-files (->> biobrick-files
-                           (remove #(or (:biobrick-file/directory? %)
-                                      (:biobrick-file/missing? %)
-                                      (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
-                           (sort-by :biobrick-file/path))
-        extensions (->> brick-data-files
-                     (keep :biobrick-file/extension)
-                     set)
-        missing-files (->> biobrick-files
-                        (filter :biobrick-file/missing?))]
-    (when biobrick-files
+   biobrick-files]
+  (e/server
+    (let [[org-name brick-name] (str/split full-name (re-pattern "\\/"))
+          brick-data-files (->> biobrick-files
+                             (remove #(or (:biobrick-file/directory? %)
+                                        (:biobrick-file/missing? %)
+                                        (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
+                             (sort-by :biobrick-file/path))
+          extensions (->> brick-data-files
+                       (keep :biobrick-file/extension)
+                       set)
+          missing-files (->> biobrick-files
+                          (filter :biobrick-file/missing?))]
       (e/client
         (dom/li
           (dom/props
@@ -548,24 +545,26 @@
     (let [{:keys [brick-name org-name]} (e/client (-> router-flow
                                                     :path-params))
           repo-name (str org-name "/" brick-name)
-          repo (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :in $ ?name
-                              :where [?e :git-repo/is-biobrick? true]
-                              [?e :git-repo/full-name ?name]
-                              [?file :biobrick-file/biobrick ?e]]
-                      datalevin-db
-                      repo-name)
-                 (concat (dtlv/q '[:find (pull ?e [*]) :in $ ?name :where
-                                   [?e :git-repo/is-biobrick? true]
-                                   [?e :git-repo/full-name ?name]
-                                   (not [?file :biobrick-file/biobrick ?e])]
-                           datalevin-db
-                           repo-name))
-                 first)]
+          [repo biobrick-file-ids]
+          #__ (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :in $ ?name
+                             :where [?e :git-repo/is-biobrick? true]
+                             [?e :git-repo/full-name ?name]
+                             [?file :biobrick-file/biobrick ?e]]
+                     datalevin-db
+                     repo-name)
+                (concat (dtlv/q '[:find (pull ?e [*]) :in $ ?name :where
+                                  [?e :git-repo/is-biobrick? true]
+                                  [?e :git-repo/full-name ?name]
+                                  (not [?file :biobrick-file/biobrick ?e])]
+                          datalevin-db
+                          repo-name))
+                first)
+          files (dtlv/pull-many datalevin-db '[*] biobrick-file-ids)]
       (e/client (dom/link (dom/props {:rel "stylesheet",
                                       :href (str "/css/compiled.css?v=" (e/server (System/getProperty "HYPERFIDDLE_ELECTRIC_SERVER_VERSION")))}))
         (dom/div (dom/div (dom/props {:class "xl:pl-72"})
                    (dom/main (dom/props {:clas "lg:pr-96"})
-                     (BioBrick. repo))))))))
+                     (BioBrick. repo files))))))))
 
 (e/defn App
   []

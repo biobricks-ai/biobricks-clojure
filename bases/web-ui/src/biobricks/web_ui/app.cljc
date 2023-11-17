@@ -530,7 +530,10 @@
       (when datalevin-db
         (e/client
           (js/console.log "Data loaded in" data-ms "ms")
-          (dom/link (dom/props {:rel "stylesheet", :href "/css/compiled.css"}))
+          (dom/link
+            (dom/props
+              {:rel "stylesheet"
+               :href (str "/css/compiled.css?v=" (e/server (System/getProperty "HYPERFIDDLE_ELECTRIC_SERVER_VERSION")))}))
           (dom/div
             (dom/div (dom/props {:class "xl:pl-72"})
               (dom/main

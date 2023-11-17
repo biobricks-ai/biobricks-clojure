@@ -354,16 +354,15 @@
 
 (defn file-type-filter [file-type]
   (fn [[_ & files]]
-    (when (seq files) (prn (map (comp :biobrick-file/extension first) files)))
     (some
-      #(= file-type (:biobrick-file/extension (first %)))
-      files)))
+      #(= file-type (:biobrick-file/extension %))
+      (apply concat files))))
 
 (defn other-file-type-filter [[_ & files]]
   (or (empty? files)
     (every?
-      #(not (#{"hdt" "parquet" "sqlite"} (:biobrick-file/extension (first %))))
-      files)))
+      #(not (#{"hdt" "parquet" "sqlite"} (:biobrick-file/extension %)))
+      (apply concat files))))
 
 (def file-type-filter-options
   {"hdt" ["HDT" (file-type-filter "hdt")]

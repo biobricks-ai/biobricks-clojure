@@ -37,7 +37,7 @@
               polylith/clj-poly
                 {:deps/root "projects/poly",
                  :git/url "https://github.com/polyfy/polylith.git",
-                 :sha "0af3bb830952281ce2f76fc5e57b46b1dfb631dc"}},
+                 :sha "15453ebc5a86f52ee1c75ec52ebb19da4b113c30"}},
            :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
                       "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
                      ],

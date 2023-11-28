@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.3.3 | MIT License | https://tailwindcss.com
+! tailwindcss v3.3.5 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -596,18 +596,6 @@ video {
 
 .relative {
   position: relative;
-}
-
-.end-1 {
-  inset-inline-end: 0.25rem;
-}
-
-.m-1 {
-  margin: 0.25rem;
-}
-
-.m-2 {
-  margin: 0.5rem;
 }
 
 .-my-2 {

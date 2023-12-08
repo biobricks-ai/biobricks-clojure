@@ -1,5 +1,5 @@
 {:paths ["resources" "src"]
- :deps {ch.qos.logback/logback-classic {:mvn/version "1.4.13"}
+ :deps {ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
         org.apache.logging.log4j/log4j-to-slf4j {:mvn/version "2.22.0"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}
         org.slf4j/slf4j-api {:mvn/version "1.7.36"}

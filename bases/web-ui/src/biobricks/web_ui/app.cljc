@@ -48,7 +48,7 @@
 
 #?(:cljs (defonce !ui-settings
            (atom {:filter-opts {:file-type #{"hdt" "other" "parquet" "sqlite"}
-                                :health #{"healthy" "unhealthy"}}
+                                :health #{"healthy"}}
                   :sort-by-opt "recently-updated"})))
 (e/def ui-settings (e/client (e/watch !ui-settings)))
 

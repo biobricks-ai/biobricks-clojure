@@ -33,8 +33,9 @@
             (dom/text label)))))))
 
 (e/defn Body [body]
-  (dom/tbody (dom/props {:class "divide-y divide-gray-800"})
-    body))
+  (e/client
+    (dom/tbody (dom/props {:class "divide-y divide-gray-800"})
+      body)))
 
 (e/defn Row [values]
   (e/client

@@ -73,30 +73,33 @@
   "Shows a green circle for true status, rose for false,
    and gray for nil."
   [status]
-  (dom/div
-    (dom/props
-      {:class (case status
-                nil "flex-none rounded-full p-1 text-gray-500 bg-gray-100/10"
-                true "flex-none rounded-full p-1 text-green-400 bg-green-400/10"
-                false
-                "flex-none rounded-full p-1 text-rose-400 bg-rose-400/10")})
-    (dom/div (dom/props {:class "h-2 w-2 rounded-full bg-current"}))))
+  (e/client
+    (dom/div
+      (dom/props
+        {:class (case status
+                  nil "flex-none rounded-full p-1 text-gray-500 bg-gray-100/10"
+                  true "flex-none rounded-full p-1 text-green-400 bg-green-400/10"
+                  false
+                  "flex-none rounded-full p-1 text-rose-400 bg-rose-400/10")})
+      (dom/div (dom/props {:class "h-2 w-2 rounded-full bg-current"})))))
 
 (e/defn DotDivider
   []
-  (svg/svg (dom/props {:viewBox "0 0 2 2",
-                       :class "h-0.5 w-0.5 flex-none fill-gray-300"})
-    (svg/circle (dom/props {:cx "1", :cy "1", :r "1"}))))
+  (e/client
+    (svg/svg (dom/props {:viewBox "0 0 2 2",
+                         :class "h-0.5 w-0.5 flex-none fill-gray-300"})
+      (svg/circle (dom/props {:cx "1", :cy "1", :r "1"})))))
 
 (e/defn RoundedBadge
   [colors label]
-  (dom/div
-    (dom/props
-      {:class
-       (str
-         "rounded-full flex-none py-1 px-2 text-xs font-medium ring-1 ring-inset "
-         colors)})
-    (dom/text label)))
+  (e/client
+    (dom/div
+      (dom/props
+        {:class
+         (str
+           "rounded-full flex-none py-1 px-2 text-xs font-medium ring-1 ring-inset "
+           colors)})
+      (dom/text label))))
 
 (e/defn FileExtensionBadge
   [ext]
@@ -113,30 +116,32 @@
 
 (e/defn ChevronBase
   [style on-click]
-  (svg/svg
-    (dom/props {:class "h-5 w-5 flex-none text-gray-400",
-                :viewBox "0 0 20 20",
-                :fill "currentColor",
-                :aria-hidden "true",
-                :style (merge {:cursor "pointer"} style)})
-    (when on-click (dom/on "click" on-click))
-    (svg/path
-      (dom/props
-        {:fill-rule "evenodd",
-         :d
-         "M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z",
-         :clip-rule "evenodd"}))))
+  (e/client
+    (svg/svg
+      (dom/props {:class "h-5 w-5 flex-none text-gray-400",
+                  :viewBox "0 0 20 20",
+                  :fill "currentColor",
+                  :aria-hidden "true",
+                  :style (merge {:cursor "pointer"} style)})
+      (when on-click (dom/on "click" on-click))
+      (svg/path
+        (dom/props
+          {:fill-rule "evenodd",
+           :d
+           "M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z",
+           :clip-rule "evenodd"})))))
 
 (e/defn ChevronRight [on-click] (ChevronBase. nil on-click))
 
 (e/defn XRed
   []
-  (svg/svg
-    (dom/props
-      {:viewBox "0 0 14 14",
-       :class
-       "align-middle inline-block h-5 w-5 stroke-red-700/75 group-hover:stroke-red-700/100"})
-    (svg/path (dom/props {:d "M4 4l6 6m0-6l-6 6", :stroke-width "1.5"}))))
+  (e/client
+    (svg/svg
+      (dom/props
+        {:viewBox "0 0 14 14",
+         :class
+         "align-middle inline-block h-5 w-5 stroke-red-700/75 group-hover:stroke-red-700/100"})
+      (svg/path (dom/props {:d "M4 4l6 6m0-6l-6 6", :stroke-width "1.5"})))))
 
 (e/defn RepoSmallInfo
   [{:biobrick/keys [data-bytes]
@@ -212,8 +217,9 @@
 
 (e/defn Repos
   [repos]
-  (dom/ul (dom/props {:role "list", :class "divide-y divide-white/5"})
-    (e/for [repo repos] (Repo. repo))))
+  (e/client
+    (dom/ul (dom/props {:role "list", :class "divide-y divide-white/5"})
+      (e/for [repo repos] (Repo. repo)))))
 
 (e/defn BrickFiles [biobrick-files]
   (e/client
@@ -384,98 +390,100 @@
 
 (e/defn SortFilterControls
   [{:keys [sort-by-opt]}]
-  (let [{:keys [file-type health]} (:filter-opts ui-settings)]
-    (dom/select (dom/on "change"
-                  (e/fn [e]
-                    (e/client (swap! !ui-settings update-ui-settings!
-                                assoc
-                                :sort-by-opt
-                                (-> e
-                                  .-target
-                                  .-value)))))
-      (e/for [[k [label]] sort-options]
-        (dom/option (dom/props {:selected (= sort-by-opt k), :value k})
-          (dom/text label))))
-    (dom/div
-      (dom/props {:class "items-center"})
-      (e/for [[k [label]] health-filter-options]
-        (let [id (str "SortFilterControls-filter-" k)
-              checked? (contains? health k)]
-          (dom/div
-            (dom/on "click"
-              (e/fn [_]
-                (e/client (let [f (if checked? disj conj)]
-                            (swap! !ui-settings
-                              update-ui-settings!
-                              update-in
-                              [:filter-opts :health]
-                              f
-                              k)))))
-            (dom/button
-              (dom/props {:aria-checked checked?
-                          :aria-labelledby (str id "-label")
-                          :class (str
-                                   (if checked? "bg-indigo-600" "bg-gray-200")
-                                   " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
-                          :role "switch"
-                          :type "button"})
-              (dom/span
-                (dom/props {:aria-hidden true
+  (e/client
+    (let [{:keys [file-type health]} (:filter-opts ui-settings)]
+      (dom/select (dom/on "change"
+                    (e/fn [e]
+                      (e/client (swap! !ui-settings update-ui-settings!
+                                  assoc
+                                  :sort-by-opt
+                                  (-> e
+                                    .-target
+                                    .-value)))))
+        (e/for [[k [label]] sort-options]
+          (dom/option (dom/props {:selected (= sort-by-opt k), :value k})
+            (dom/text label))))
+      (dom/div
+        (dom/props {:class "items-center"})
+        (e/for [[k [label]] health-filter-options]
+          (let [id (str "SortFilterControls-filter-" k)
+                checked? (contains? health k)]
+            (dom/div
+              (dom/on "click"
+                (e/fn [_]
+                  (e/client (let [f (if checked? disj conj)]
+                              (swap! !ui-settings
+                                update-ui-settings!
+                                update-in
+                                [:filter-opts :health]
+                                f
+                                k)))))
+              (dom/button
+                (dom/props {:aria-checked checked?
+                            :aria-labelledby (str id "-label")
                             :class (str
-                                     (if checked? "translate-x-5" "translate-x-0")
-                                     " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
-            (dom/span
-              (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
-                          :id (str id "-label")})
-              (dom/text label))))))
-    (dom/div (dom/props {:class "mt-4"}))
-    (dom/div
-      (dom/props {:class "items-center"})
-      (e/for [[k [label]] file-type-filter-options]
-        (let [id (str "SortFileTypeFilterControls-filter-" k)
-              checked? (contains? file-type k)]
-          (dom/div
-            (dom/on "click"
-              (e/fn [_]
-                (e/client (let [f (if checked? disj conj)]
-                            (swap! !ui-settings
-                              update-ui-settings!
-                              update-in
-                              [:filter-opts :file-type]
-                              f
-                              k)))))
-            (dom/button
-              (dom/props {:aria-checked checked?
-                          :aria-labelledby (str id "-label")
-                          :class (str
-                                   (if checked? "bg-indigo-600" "bg-gray-200")
-                                   " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
-                          :role "switch"
-                          :type "button"})
+                                     (if checked? "bg-indigo-600" "bg-gray-200")
+                                     " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
+                            :role "switch"
+                            :type "button"})
+                (dom/span
+                  (dom/props {:aria-hidden true
+                              :class (str
+                                       (if checked? "translate-x-5" "translate-x-0")
+                                       " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
               (dom/span
-                (dom/props {:aria-hidden true
+                (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
+                            :id (str id "-label")})
+                (dom/text label))))))
+      (dom/div (dom/props {:class "mt-4"}))
+      (dom/div
+        (dom/props {:class "items-center"})
+        (e/for [[k [label]] file-type-filter-options]
+          (let [id (str "SortFileTypeFilterControls-filter-" k)
+                checked? (contains? file-type k)]
+            (dom/div
+              (dom/on "click"
+                (e/fn [_]
+                  (e/client (let [f (if checked? disj conj)]
+                              (swap! !ui-settings
+                                update-ui-settings!
+                                update-in
+                                [:filter-opts :file-type]
+                                f
+                                k)))))
+              (dom/button
+                (dom/props {:aria-checked checked?
+                            :aria-labelledby (str id "-label")
                             :class (str
-                                     (if checked? "translate-x-5" "translate-x-0")
-                                     " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
-            (dom/span
-              (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
-                          :id (str id "-label")})
-              (dom/text label))))))))
+                                     (if checked? "bg-indigo-600" "bg-gray-200")
+                                     " relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2")
+                            :role "switch"
+                            :type "button"})
+                (dom/span
+                  (dom/props {:aria-hidden true
+                              :class (str
+                                       (if checked? "translate-x-5" "translate-x-0")
+                                       " pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")})))
+              (dom/span
+                (dom/props {:class "ml-3 text-sm font-medium text-gray-300"
+                            :id (str id "-label")})
+                (dom/text label)))))))))
 
 (e/defn PageSelector
   [page num-pages]
-  (dom/div (dom/props {:class "text-gray-300"})
-    (e/for [i (drop 1 (range (inc num-pages)))]
-      (when (not= 1 i) (dom/text " | "))
-      (dom/a (dom/on "click"
-               (e/fn [_]
-                 (e/client (rfe/set-query
-                             #(if (= 1 i)
-                                (dissoc % :page)
-                                (assoc % :page (str i)))))))
-        (dom/props {:style {:cursor "pointer",
-                            :font-weight (when (= i page) "bold")}})
-        (dom/text i)))))
+  (e/client
+    (dom/div (dom/props {:class "text-gray-300"})
+      (e/for [i (drop 1 (range (inc num-pages)))]
+        (when (not= 1 i) (dom/text " | "))
+        (dom/a (dom/on "click"
+                 (e/fn [_]
+                   (e/client (rfe/set-query
+                               #(if (= 1 i)
+                                  (dissoc % :page)
+                                  (assoc % :page (str i)))))))
+          (dom/props {:style {:cursor "pointer",
+                              :font-weight (when (= i page) "bold")}})
+          (dom/text i))))))
 
 ; https://tailwindui.com/components/application-ui/page-examples/home-screens#component-1cb122f657954361d2f5fce7ec641480
 (e/defn ReposList
@@ -525,8 +533,8 @@
                           vec)
           num-pages (+ (quot (count repos) 10) (min 1 (mod (count repos) 10)))
           data-ms (quot (- (System/nanoTime) start) 1000000)]
-      (when datalevin-db
-        (e/client
+      (e/client
+        (when datalevin-db
           (js/console.log "Data loaded in" data-ms "ms")
           (dom/link
             (dom/props

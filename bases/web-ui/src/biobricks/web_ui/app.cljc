@@ -501,10 +501,12 @@
           start (System/nanoTime)
           repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
                                :where
+                               [?e :git-repo/archived? false]
                                [?e :git-repo/is-biobrick? true]
                                [?file :biobrick-file/biobrick ?e]]
                        datalevin-db)
                   (concat (dtlv/q '[:find (pull ?e [*]) :where
+                                    [?e :git-repo/archived? false]
                                     [?e :git-repo/is-biobrick? true]
                                     (not [?file :biobrick-file/biobrick ?e])]
                             datalevin-db)))

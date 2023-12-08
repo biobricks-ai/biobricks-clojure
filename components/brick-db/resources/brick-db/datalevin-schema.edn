@@ -14,6 +14,7 @@
  :biobrick-file/missing? {:db/valueType :db.type/boolean},
  :biobrick-file/path {:db/valueType :db.type/string},
  :biobrick-file/size {:db/valueType :db.type/long},
+ :git-repo/archived? {:db/valueType :db.type/boolean},
  :git-repo/checked-at {:db/valueType :db.type/instant},
  :git-repo/clone-url {:db/valueType :db.type/string},
  :git-repo/created-at {:db/valueType :db.type/instant},

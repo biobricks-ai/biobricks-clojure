@@ -42,11 +42,12 @@
 
 (defn check-github-repos
   [{:keys [datalevin-conn github-org-name github-token]}]
-  (doseq [{:keys [clone_url created_at description full_name html_url id
-                  updated_at]}
+  (doseq [{:keys [archived clone_url created_at description
+                  full_name html_url id updated_at]}
           (github/list-org-repos {:token github-token} github-org-name)]
     (dtlv/transact! datalevin-conn
-      [(->> #:git-repo{:checked-at (java.util.Date.),
+      [(->> #:git-repo{:archived? (boolean archived)
+                       :checked-at (java.util.Date.),
                        :clone-url clone_url,
                        :created-at (github/parse-date created_at),
                        :description description,

@@ -577,13 +577,15 @@
 
 (e/defn App
   []
-  (e/client (let [match router-flow
-                  match-name (-> match
-                               :data
-                               :name)]
-              (if match
-                (case match-name
-                  :home (ReposList.)
-                  :biobrick (BioBrickPage.)
-                  (dom/div (dom/text "No component for " (str match-name))))
-                (dom/div (dom/text "404 Not Found"))))))
+  (e/client
+    (binding [dom/node js/document.body]
+      (let [match router-flow
+            match-name (-> match
+                         :data
+                         :name)]
+        (if match
+          (case match-name
+            :home (ReposList.)
+            :biobrick (BioBrickPage.)
+            (dom/div (dom/text "No component for " (str match-name))))
+          (dom/div (dom/text "404 Not Found")))))))

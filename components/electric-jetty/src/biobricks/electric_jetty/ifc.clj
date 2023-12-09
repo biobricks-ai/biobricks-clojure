@@ -76,31 +76,18 @@
       (next-handler ring-req))))
 
 (defn wrap-electric-websocket
-  [next-handler]
+  [next-handler entrypoint]
   (fn [ring-request]
     (if (ring/ws-upgrade-request? ring-request)
       (let [electric-message-handler
-            (partial adapter/electric-ws-message-handler ring-request)] ; takes
-                                                                          ; the
-                                                                          ; ring
-                                                                          ; request
-                                                                          ; as
-                                                                          ; first
-                                                                          ; arg
-                                                                          ; -
-                                                                          ; makes
-                                                                          ; it
-                                                                          ; available
-                                                                          ; to
-                                                                          ; electric
-                                                                          ; program
+            (partial adapter/electric-ws-message-handler ring-request entrypoint)]
         (ring/ws-upgrade-response (adapter/electric-ws-adapter
                                     electric-message-handler)))
       (next-handler ring-request))))
 
 (defn electric-websocket-middleware
-  [next-handler]
-  (-> (wrap-electric-websocket next-handler) ; 4. connect electric client
+  [next-handler entrypoint]
+  (-> (wrap-electric-websocket next-handler entrypoint) ; 4. connect electric client
     (cookies/wrap-cookies) ; 3. makes cookies available to Electric app
     (wrap-reject-stale-client) ; 2. reject stale electric client
     (wrap-params) ; 1. parse query params
@@ -118,14 +105,14 @@
       handler)))
 
 (defn http-middleware
-  [resources-path manifest-path & [extra-middleware]]
+  [resources-path manifest-path entrypoint & [extra-middleware]]
   ;; these compose as functions, so are applied bottom up
   (-> not-found-handler
     (wrap-index-page resources-path manifest-path)
     (wrap-resource resources-path)
     (wrap-extra-middleware extra-middleware)
     wrap-content-type
-    electric-websocket-middleware))
+    (electric-websocket-middleware entrypoint)))
 
 (defn- add-gzip-handler
   "Makes Jetty server compress responses. Optional but recommended."
@@ -136,13 +123,15 @@
       (.setHandler (.getHandler server)))))
 
 (defn start-server!
-  [{:keys [extra-middleware port resources-path manifest-path],
+  [entrypoint
+   {:keys [extra-middleware port resources-path manifest-path],
     :or {port 8080,
          resources-path "public",
          manifest-path "public/js/manifest.edn"},
     :as config}]
   (try
-    (let [server (ring/run-jetty (http-middleware resources-path manifest-path extra-middleware)
+    (let [server (ring/run-jetty
+                   (http-middleware resources-path manifest-path entrypoint extra-middleware)
                    (merge {:port port,
                            :join? false,
                            :configurator add-gzip-handler}
@@ -160,5 +149,5 @@
       (if (instance? BindException (ex-cause err)) ; port is already taken,
                                                    ; retry with another one
         (do (log/warn "Port" port "was not available, retrying with" (inc port))
-          (start-server! (update config :port inc)))
+          (start-server! entrypoint (update config :port inc)))
         (throw err)))))

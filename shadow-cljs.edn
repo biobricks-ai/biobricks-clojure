@@ -7,7 +7,8 @@
           :output-dir "bases/web-ui/resources/public/js",
           :asset-path "/js",
           :modules {:main {:entries [biobricks.web-ui.api],
-                           :init-fn biobricks.web-ui.api/start!}}}
+                           :init-fn biobricks.web-ui.api/start!}}
+          :build-hooks [(hyperfiddle.electric.shadow-cljs.hooks/reload-clj)]}
     :prod {:asset-path "/js",
            :module-hash-names true,
            :modules {:main {:entries [biobricks.web-ui.api],

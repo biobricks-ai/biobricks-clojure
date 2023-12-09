@@ -2,7 +2,7 @@
   (:gen-class)
   (:require [biobricks.electric-jetty.ifc :as electric-jetty]
             [biobricks.web-ui.api.ring :as ring]
-            biobricks.web-ui.app
+            [biobricks.web-ui.boot :as boot]
             [biobricks.web-ui.system :as system]
             clojure.string))
 
@@ -13,7 +13,7 @@
    :resources-path "public"})
 
 (defn -main
-  [& args] ; run with `clj -M -m prod`
+  [& _args] ; run with `clj -M -m prod`
   (when (clojure.string/blank? (System/getProperty
                                  "HYPERFIDDLE_ELECTRIC_SERVER_VERSION"))
     (throw
@@ -25,6 +25,6 @@
     (-> electric-server-config
       (assoc :extra-middleware [ring/wrap-routes
                                 #(ring/wrap-instance % instance)])
-      electric-jetty/start-server!)))
+      (->> (electric-jetty/start-server! boot/with-ring-request)))))
 
 ; On CLJS side we reuse api.cljs for prod entrypoint

@@ -2,6 +2,7 @@
   (:require hashp.core
             [biobricks.electric-jetty.ifc :as electric-jetty]
             [biobricks.web-ui.api.ring :as ring]
+            [biobricks.web-ui.boot :as boot]
             [biobricks.web-ui.system :as system]
             [clojure.java.io :as io]
             [shadow.cljs.devtools.config :as shadow-config]))
@@ -39,7 +40,7 @@
     (def server (-> electric-server-config
                   (assoc :extra-middleware [ring/wrap-routes
                                             #(ring/wrap-instance % instance)])
-                  electric-jetty/start-server!)))
+                  (->> (electric-jetty/start-server! boot/with-ring-request)))))
   (comment
     (.stop server)))
 

@@ -1,14 +1,5 @@
-(ns ^:dev/always biobricks.web-ui.api ; Electric currently needs to rebuild
-                                      ; everything when any file changes. Will
-                                      ; fix
-  (:require [biobricks.web-ui.app :as app]
-            hyperfiddle.electric
-            hyperfiddle.electric-dom2))
-
-(def electric-main
-  (hyperfiddle.electric/boot ; Electric macroexpansion - Clojure to signals
-                             ; compiler
-    (binding [hyperfiddle.electric-dom2/node js/document.body] (app/App.))))
+(ns ^:dev/always biobricks.web-ui.api
+  (:require [biobricks.web-ui.boot :as boot]))
 
 (defonce reactor nil)
 
@@ -16,7 +7,7 @@
   []
   (assert (nil? reactor) "reactor already running")
   (set! reactor
-    (electric-main #(js/console.log "Reactor success:" %)
+    (boot/client #(js/console.log "Reactor success:" %)
       #(js/console.error "Reactor failure:" %))))
 
 (defn ^:dev/before-load stop!

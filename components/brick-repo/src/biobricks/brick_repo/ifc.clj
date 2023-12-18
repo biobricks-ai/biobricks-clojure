@@ -54,8 +54,10 @@
 (defn brick-lock
   "Returns the parsed data from dvc.lock."
   [dir]
-  (with-open [rdr (io/reader (fs/file dir "dvc.lock"))]
-    (yaml/parse-stream rdr)))
+  (let [file (fs/file dir "dvc.lock")]
+    (when (fs/exists? file)
+      (with-open [rdr (io/reader file)]
+        (yaml/parse-stream rdr)))))
 
 (defn brick-data-file-specs
   "Returns a seq of {:hash :path :md5 :size :nfiles} maps for
@@ -63,7 +65,7 @@
 
    Files created prior to DVC 3.0 don't have a :hash entry."
   [dir]
-  (let [lock (brick-lock dir)]
+  (when-let [lock (brick-lock dir)]
     (->> lock
       :stages
       vals
@@ -85,7 +87,7 @@
 
    Files created prior to DVC 3.0 don't have a :hash entry."
   [dir]
-  (let [lock (brick-lock dir)]
+  (when-let [lock (brick-lock dir)]
     (->> lock
       :stages
       vals

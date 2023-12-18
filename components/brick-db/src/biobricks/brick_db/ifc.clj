@@ -13,6 +13,13 @@
             [medley.core :as me])
   (:import [java.io PushbackReader]))
 
+(defonce brick-locks (atom {}))
+
+(defn get-lock! [name]
+  (or (get @brick-locks name)
+    (-> (swap! brick-locks assoc name #(or % (Object.)))
+      (get name))))
+
 (defn datalevin-schema
   []
   (-> "brick-db/datalevin-schema.edn"
@@ -70,7 +77,6 @@
   (-> (java.nio.file.Files/getFileStore path)
     .getUsableSpace))
 
-(defonce brick-lock (Object.))
 (defonce brick-data-lock (Object.))
 
 (defn check-brick-data
@@ -125,7 +131,7 @@
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}
    {:db/keys [id], :git-repo/keys [clone-url full-name]}]
-  (locking brick-lock
+  (locking (get-lock! full-name)
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
           dir (if (fs/exists? path)
                 (do (p/process {:dir (fs/file path), :err :string, :out :string}

@@ -79,19 +79,6 @@
 
 (defonce brick-data-lock (Object.))
 
-(defn check-brick-data
-  [{:keys [datalevin-conn maintain-disk-free-bytes pull-dvc-data?]} dir id]
-  (when pull-dvc-data?
-    (locking brick-data-lock
-      (when (< maintain-disk-free-bytes
-              (- (get-disk-free-space dir) (brick-repo/pull-data-bytes dir)))
-        (-> @(p/process {:dir (fs/file dir), :err :string, :out :string}
-               "dvc" "pull"
-               "-j" "4")
-          p/throw-on-error)
-        (dtlv/transact! datalevin-conn
-          [{:db/id id, :biobrick/data-pulled? true}])))))
-
 (defn get-biobrick-file-datoms*
   [brick-id brick-config file-specs]
   (->> (for [{:as file-spec, :keys [hash md5 path size]} file-specs
@@ -127,6 +114,22 @@
   (get-biobrick-file-datoms* brick-id
     (brick-repo/brick-config dir)
     (brick-repo/brick-data-file-specs dir)))
+
+(defn check-brick-data
+  [{:keys [datalevin-conn maintain-disk-free-bytes pull-dvc-data?]} dir id]
+  (let [file-datoms (get-biobrick-file-datoms dir id)]
+    (when (seq file-datoms)
+      (dtlv/transact! datalevin-conn file-datoms)))
+  (when pull-dvc-data?
+    (locking brick-data-lock
+      (when (< maintain-disk-free-bytes
+              (- (get-disk-free-space dir) (brick-repo/pull-data-bytes dir)))
+        (-> @(p/process {:dir (fs/file dir), :err :string, :out :string}
+               "dvc" "pull"
+               "-j" "4")
+          p/throw-on-error)
+        (dtlv/transact! datalevin-conn
+          [{:db/id id, :biobrick/data-pulled? true}])))))
 
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}

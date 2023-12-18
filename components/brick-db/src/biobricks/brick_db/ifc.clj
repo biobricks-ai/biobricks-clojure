@@ -134,9 +134,9 @@
   (locking (get-lock! full-name)
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
           dir (if (fs/exists? path)
-                (do (p/process {:dir (fs/file path), :err :string, :out :string}
-                      "git"
-                      "pull")
+                (do @(p/process {:dir (fs/file path), :err :string, :out :string}
+                       "git"
+                       "pull")
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))
@@ -155,7 +155,6 @@
                                                        (remove true?)
                                                        count),
                      :git-repo/is-biobrick? true})]
-              (concat (get-biobrick-file-datoms dir id))
               (dtlv/transact! datalevin-conn))
           (future (check-brick-data instance dir id)))))))
 
@@ -175,23 +174,19 @@
          '[:find (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
            :where [?e :git-repo/github-id]
            (or
-             [(missing? $ ?e :git-repo/is-biobrick?)]
-             (and
-               [?e :git-repo/is-biobrick? true]
-               (or
-                 [(missing? $ ?e :biobrick/checked-at)]
-                 [(missing? $ ?e :biobrick/data-pulled?)]
-                 [?e :biobrick/data-pulled? false])))]
+             [(missing? $ ?e :biobrick/checked-at)]
+             [(missing? $ ?e :biobrick/data-pulled?)]
+             [?e :biobrick/data-pulled? false])]
          (dtlv/db datalevin-conn))
        (concat (dtlv/q
                  '[:find
                    (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
-                   :where [?e :git-repo/is-biobrick? true]
-                   [?e :biobrick/checked-at ?checked-at]
+                   :where [?e :biobrick/checked-at ?checked-at]
                    [?e :git-repo/updated-at ?updated-at]
                    [(.after ?updated-at ?checked-at)]]
                  (dtlv/db datalevin-conn))))]
-    (doseq [[git-repo] git-repos] (check-brick instance git-repo))))
+    (doseq [[git-repo] git-repos]
+      (check-brick instance git-repo))))
 
 (comment
   (def instance

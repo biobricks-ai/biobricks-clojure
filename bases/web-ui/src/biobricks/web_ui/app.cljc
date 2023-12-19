@@ -567,8 +567,7 @@
                           repo-name))
                 first)
           files (dtlv/pull-many datalevin-db '[*] biobrick-file-ids)]
-      (e/client (dom/link (dom/props {:rel "stylesheet",
-                                      :href (str "/css/compiled.css?v=" (e/server (System/getProperty "HYPERFIDDLE_ELECTRIC_SERVER_VERSION")))}))
+      (e/client
         (dom/div (dom/div (dom/props {:class "xl:pl-72"})
                    (dom/main (dom/props {:clas "lg:pr-96"})
                      (BioBrick. repo files))))))))

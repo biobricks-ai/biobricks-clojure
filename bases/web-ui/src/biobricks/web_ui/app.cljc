@@ -57,14 +57,6 @@
 
 #?(:clj (defn date-str [date now] (humanize/datetime date :now-dt now)))
 
-(e/defn ElementData
-  [label s]
-  (e/server (when (-> system
-                    instance
-                    :debug?)
-              (e/client (dom/details (dom/summary (dom/text label))
-                          (dom/pre (dom/text s)))))))
-
 (e/defn StatusCircle
   "Shows a green circle for true status, rose for false,
    and gray for nil."

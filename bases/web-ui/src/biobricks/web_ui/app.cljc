@@ -1,18 +1,14 @@
 (ns biobricks.web-ui.app
-  (:require #?(:clj [babashka.fs :as fs])
-            #?(:clj [biobricks.brick-db.ifc :as brick-db])
-            [biobricks.ui-table.ifc :as ui-table]
+  (:require [biobricks.ui-table.ifc :as ui-table]
             [biobricks.web-ui.api.routes :as routes]
             #?(:clj [clj-commons.humanize :as humanize])
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [contrib.str :refer [empty->nil pprint-str]]
             #?(:clj [datalevin.core :as dtlv])
             [heroicons.electric.v24.outline :as ho]
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-svg :as svg]
-            [hyperfiddle.electric-ui4 :as ui]
             [medley.core :as me]
             [missionary.core :as m]
             [reitit.core :as rr]
@@ -510,8 +506,10 @@
           repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
                                :where
                                [?e :git-repo/archived? false]
+                               [?e :git-repo/git-sha-latest ?sha]
                                [?e :git-repo/is-biobrick? true]
-                               [?file :biobrick-file/biobrick ?e]]
+                               [?file :biobrick-file/biobrick ?e]
+                               [?file :biobrick-file/git-sha ?sha]]
                        datalevin-db)
                   (concat (dtlv/q '[:find (pull ?e [*]) :where
                                     [?e :git-repo/archived? false]

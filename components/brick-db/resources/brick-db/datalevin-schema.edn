@@ -11,6 +11,8 @@
  :biobrick-file/directory? {:db/valueType :db.type/boolean},
  :biobrick-file/dvc-url {:db/valueType :db.type/string},
  :biobrick-file/extension {:db/valueType :db.type/string},
+ :biobrick-file/git-sha {:db/cardinality :db.cardinality/many
+                         :db/valueType :db.type/string}
  :biobrick-file/missing? {:db/valueType :db.type/boolean},
  :biobrick-file/path {:db/valueType :db.type/string},
  :biobrick-file/size {:db/valueType :db.type/long},
@@ -22,6 +24,7 @@
  :git-repo/full-name {:db/valueType :db.type/string},
  :git-repo/github-id {:db/unique :db.unique/identity,
                       :db/valueType :db.type/long},
+ :git-repo/git-sha-latest {:db/valueType :db.type/string}
  :git-repo/is-biobrick? {:db/valueType :db.type/boolean},
  :git-repo/html-url {:db/valueType :db.type/string},
  :git-repo/updated-at {:db/valueType :db.type/instant}}

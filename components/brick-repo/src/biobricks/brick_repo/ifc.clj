@@ -1,7 +1,6 @@
 (ns biobricks.brick-repo.ifc
   (:require [babashka.fs :as fs]
             [biobricks.process.ifc :as p]
-            [biobricks.tech-ml-parquet.ifc :as tmparquet]
             [clj-yaml.core :as yaml]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
@@ -179,3 +178,15 @@
       brick-info
       (let [brick-info (assoc brick-info :data-bytes (brick-data-bytes dir))]
         (assoc brick-info :health-git (brick-health-git dir brick-info))))))
+
+(defn git-sha
+  "Returns the sha of the latest revision for the git repo in `dir`."
+  [dir]
+  (-> (p/process
+        {:dir (fs/file dir), :err :string, :out :string}
+        "git"
+        "rev-parse"
+        "HEAD")
+    p/throw-on-error
+    :out
+    str/trim))

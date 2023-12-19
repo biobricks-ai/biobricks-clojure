@@ -80,38 +80,41 @@
 (defonce brick-data-lock (Object.))
 
 (defn get-biobrick-file-datoms*
-  [brick-id brick-config file-specs]
-  (->> (for [{:as file-spec, :keys [hash md5 path size]} file-specs
-             :let [dvc-url (brick-repo/download-url brick-config
-                             md5
-                             :old-cache-location?
-                             (not hash))
-                   dir? (str/ends-with? md5 ".dir")
-                   biobrick-file {:biobrick-file/biobrick brick-id,
-                                  :biobrick-file/biobrick+dvc-url [brick-id
-                                                                   dvc-url],
-                                  :biobrick-file/directory? dir?,
-                                  :biobrick-file/dvc-url dvc-url,
-                                  :biobrick-file/extension (fs/extension path),
-                                  :biobrick-file/path path,
-                                  :biobrick-file/size size}]]
-         (try (hc/head dvc-url)
-           (if dir?
-             (get-biobrick-file-datoms*
-               brick-id
-               brick-config
-               (brick-repo/resolve-dirs brick-config [file-spec]))
-             [(assoc biobrick-file :biobrick-file/missing? false)])
-           (catch Exception e
-             (if (= "status: 404" (ex-message e))
-               [(assoc biobrick-file :biobrick-file/missing? true)]
-               (throw e)))))
-    (apply concat)
-    (keep #(when (seq %) (me/remove-vals nil? %)))))
+  [dir brick-id brick-config file-specs]
+  (let [git-sha (brick-repo/git-sha dir)]
+    (->> (for [{:as file-spec, :keys [hash md5 path size]} file-specs
+               :let [dvc-url (brick-repo/download-url brick-config
+                               md5
+                               :old-cache-location?
+                               (not hash))
+                     dir? (str/ends-with? md5 ".dir")
+                     biobrick-file {:biobrick-file/biobrick brick-id,
+                                    :biobrick-file/biobrick+dvc-url [brick-id
+                                                                     dvc-url],
+                                    :biobrick-file/directory? dir?,
+                                    :biobrick-file/dvc-url dvc-url,
+                                    :biobrick-file/extension (fs/extension path),
+                                    :biobrick-file/git-sha git-sha
+                                    :biobrick-file/path path,
+                                    :biobrick-file/size size}]]
+           (try (hc/head dvc-url)
+             (if dir?
+               (get-biobrick-file-datoms*
+                 dir
+                 brick-id
+                 brick-config
+                 (brick-repo/resolve-dirs brick-config [file-spec]))
+               [(assoc biobrick-file :biobrick-file/missing? false)])
+             (catch Exception e
+               (if (= "status: 404" (ex-message e))
+                 [(assoc biobrick-file :biobrick-file/missing? true)]
+                 (throw e)))))
+      (apply concat)
+      (keep #(when (seq %) (me/remove-vals nil? %))))))
 
 (defn get-biobrick-file-datoms
   [dir brick-id]
-  (get-biobrick-file-datoms* brick-id
+  (get-biobrick-file-datoms* dir brick-id
     (brick-repo/brick-config dir)
     (brick-repo/brick-data-file-specs dir)))
 
@@ -143,6 +146,7 @@
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))
+          git-sha (brick-repo/git-sha dir)
           {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]
@@ -157,6 +161,7 @@
                                                        vals
                                                        (remove true?)
                                                        count),
+                     :git-repo/git-sha-latest git-sha
                      :git-repo/is-biobrick? true})]
               (dtlv/transact! datalevin-conn))
           (future (check-brick-data instance dir id)))))))

@@ -196,7 +196,15 @@
                    [(.after ?updated-at ?checked-at)]]
                  (dtlv/db datalevin-conn))))]
     (doseq [[git-repo] git-repos]
-      (check-brick instance git-repo))))
+      ; Limit operations to every 15 seconds to avoid hitting rate limits
+      (let [start (System/nanoTime)]
+        (try
+          (check-brick instance git-repo)
+          (catch Exception e
+            (log/error e "Error checking brick" (:get-repo/full-name git-repo))))
+        (let [sleep-ms (- 15000 (quot (- (System/nanoTime) start) 1000000))]
+          (when (< 100 sleep-ms)
+            (Thread/sleep sleep-ms)))))))
 
 (comment
   (def instance

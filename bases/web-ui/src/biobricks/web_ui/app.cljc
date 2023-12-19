@@ -558,7 +558,7 @@
                           datalevin-db
                           repo-name))
                 first)
-          files (dtlv/pull-many datalevin-db '[*] biobrick-file-ids)]
+          files (dtlv/pull-many datalevin-db '[*] (take 100 biobrick-file-ids))]
       (e/client
         (dom/div (dom/div (dom/props {:class "xl:pl-72"})
                    (dom/main (dom/props {:clas "lg:pr-96"})

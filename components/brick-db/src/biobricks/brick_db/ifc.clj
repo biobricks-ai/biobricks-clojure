@@ -137,7 +137,9 @@
 (defn check-brick
   [{:as instance, :keys [bricks-path datalevin-conn]}
    {:db/keys [id], :git-repo/keys [clone-url full-name]}]
+  (log/info "Checking brick" full-name)
   (locking (get-lock! full-name)
+    (log/info "Acquired lock for" full-name)
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
           dir (if (fs/exists? path)
                 (do @(p/process {:dir (fs/file path), :err :string, :out :string}

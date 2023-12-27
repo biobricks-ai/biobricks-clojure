@@ -190,3 +190,18 @@
     p/throw-on-error
     :out
     str/trim))
+
+(defn git-unix-commit-time
+  "Returns the Unix commit time of the given `sha` in the git repo in `dir`."
+  [dir sha]
+  (-> (p/process
+        {:dir (fs/file dir), :err :string, :out :string}
+        "git"
+        "show"
+        "-s"
+        "--format=%ct"
+        sha)
+    p/throw-on-error
+    :out
+    str/trim
+    parse-long))

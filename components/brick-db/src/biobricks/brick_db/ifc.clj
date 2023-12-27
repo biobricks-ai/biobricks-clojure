@@ -149,6 +149,7 @@
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))
           git-sha (brick-repo/git-sha dir)
+          commit-time (brick-repo/git-unix-commit-time dir git-sha)
           {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
       (if-not is-brick?
         (->> [{:db/id id, :git-repo/is-biobrick? false}]
@@ -164,7 +165,8 @@
                                                        (remove true?)
                                                        count),
                      :git-repo/git-sha-latest git-sha
-                     :git-repo/is-biobrick? true})]
+                     :git-repo/is-biobrick? true
+                     :git-repo/updated-at (java.util.Date. (* commit-time 1000))})]
               (dtlv/transact! datalevin-conn))
           (future (check-brick-data instance dir id)))))))
 

@@ -4,7 +4,7 @@ concurrency: deploy-${{ github.ref_name }}
 on:
   push:
     branches:
-      - prod
+      - master
 
 jobs:
   deploy:

@@ -337,14 +337,16 @@
         (BrickBadge. full-name)))))
 
 (defn healthy?
-  [repo]
-  (boolean (some-> repo
-             :biobrick/health-check-failures
-             zero?)))
+  [[repo files]]
+  (and
+    (some-> repo
+      :biobrick/health-check-failures
+      zero?)
+    (every? (complement :biobrick-file/missing?) files)))
 
 (def health-filter-options
-  {"healthy" ["Healthy" (comp healthy? first)]
-   "unhealthy" ["Unhealthy" (comp (complement healthy?) first)]})
+  {"healthy" ["Healthy" healthy?]
+   "unhealthy" ["Unhealthy" (complement healthy?)]})
 
 (defn file-type-filter [file-type]
   (fn [[_ & files]]
@@ -510,13 +512,12 @@
                             datalevin-db)))
           repos (let [[_ f g] (sort-options sort-by-opt)]
                   (->> repos
-                    (filter health-filter-f)
                     (sort-by (comp f first))
                     ((or g identity))
                     (map (fn [[repo files]]
                            [repo
                             (dtlv/pull-many datalevin-db '[*] files)]))
-                    (filter file-type-filter-f)))
+                    (filter #(and (health-filter-f %) (file-type-filter-f %)))))
           repos-on-page (->> repos
                           (drop (* 10 (dec page)))
                           (take 10)

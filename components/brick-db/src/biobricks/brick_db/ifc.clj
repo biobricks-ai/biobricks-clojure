@@ -50,7 +50,7 @@
 (defn check-github-repos
   [{:keys [datalevin-conn github-org-name github-token]}]
   (doseq [{:keys [archived clone_url created_at description
-                  full_name html_url id updated_at]}
+                  full_name html_url id]}
           (github/list-org-repos {:token github-token} github-org-name)]
     (dtlv/transact! datalevin-conn
       [(->> #:git-repo{:archived? (boolean archived)
@@ -60,8 +60,7 @@
                        :description description,
                        :full-name full_name,
                        :github-id id,
-                       :html-url html_url,
-                       :updated-at (github/parse-date updated_at)}
+                       :html-url html_url}
          (me/remove-vals nil?))])))
 
 (defn github-poller

@@ -1,5 +1,4 @@
-{:deps {com.hyperfiddle/electric {:git/sha "d30987782aca4fe6d5f85f8190f74716b717973d"
-                                  :git/url "https://github.com/hyperfiddle/electric.git"}
+{:deps {com.hyperfiddle/electric {:mvn/version "v2-alpha-536-g0c582f78"}
         com.hyperfiddle/heroicons-electric {:mvn/version "79c4d15"
                                             :exclusions [com.hyperfiddle/electric]}
         info.sunng/ring-jetty9-adapter {:exclusions [org.slf4j/slf4j-api

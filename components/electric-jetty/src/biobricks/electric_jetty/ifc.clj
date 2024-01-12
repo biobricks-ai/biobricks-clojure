@@ -68,7 +68,7 @@
     (if (ring/ws-upgrade-request? ring-req)
       (let [client-version (get-in ring-req
                              [:query-params
-                              "HYPERFIDDLE_ELECTRIC_CLIENT_VERSION"])]
+                              "ELECTRIC_USER_VERSION"])]
         (cond (nil? VERSION) (next-handler ring-req)
           (= client-version VERSION) (next-handler ring-req)
           :else (adapter/reject-websocket-handler 1008 "stale client") ; https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1

@@ -1,5 +1,5 @@
 {:aliases {:test {:extra-deps {}, :extra-paths ["test"]}},
- :deps {babashka/fs {:mvn/version "0.5.20"},
+ :deps {babashka/fs {:mvn/version "0.4.19"},
         clj-commons/clj-yaml {:mvn/version "1.0.27"},
-        org.clojure/data.json {:mvn/version "2.5.0"}},
+        org.clojure/data.json {:mvn/version "2.4.0"}},
  :paths ["src"]}

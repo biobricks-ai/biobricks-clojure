@@ -1,6 +1,6 @@
 {:aliases
-   {:antq {:deps {com.github.liquidz/antq {:mvn/version "2.8.1173"},
-                  org.slf4j/slf4j-nop {:mvn/version "2.0.11"}},
+   {:antq {:deps {com.github.liquidz/antq {:mvn/version "2.7.1133"},
+                  org.slf4j/slf4j-nop {:mvn/version "2.0.9"}},
            :main-opts ["-m" "antq.core"]},
     :build {:extra-deps {com.google.guava/guava {:mvn/version "31.0.1-jre"},
                          io.github.clojure/tools.build
@@ -8,13 +8,13 @@
                             :mvn/version "0.9.6"},
                          io.github.seancorfield/build-clj {:git/sha "9c9f078",
                                                            :git/tag "v0.9.2"},
-                         thheller/shadow-cljs {:mvn/version "2.26.4"}},
+                         thheller/shadow-cljs {:mvn/version "2.26.2"}},
             :extra-paths ["src-build"],
             :jvm-opts ["-Xss2m"],
             :ns-default build},
     :dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.7"},
                        com.google.guava/guava {:mvn/version "31.0.1-jre"},
-                       thheller/shadow-cljs {:mvn/version "2.26.4"}},
+                       thheller/shadow-cljs {:mvn/version "2.26.2"}},
           :jvm-opts ["-Xss2m" ; https://github.com/hyperfiddle/photon/issues/11
                      "-XX:-OmitStackTraceInFastThrow" ;; RCF
                      "--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
@@ -39,7 +39,7 @@
               polylith/clj-poly
                 {:deps/root "projects/poly",
                  :git/url "https://github.com/polyfy/polylith.git",
-                 :sha "3edb530c618f072a95ed305b816cfcead22658f3"}},
+                 :sha "a558bf7fc465b6d1f9e9291afc0232b627bf3d8c"}},
            :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
                       "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
                      ],

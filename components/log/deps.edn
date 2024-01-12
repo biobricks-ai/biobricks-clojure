@@ -1,8 +1,8 @@
 {:paths ["resources" "src"]
  :deps {ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
-        org.apache.logging.log4j/log4j-to-slf4j {:mvn/version "2.22.1"}
+        org.apache.logging.log4j/log4j-to-slf4j {:mvn/version "2.22.0"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}
-        org.slf4j/slf4j-api {:mvn/version "2.0.11"}
-        org.slf4j/jul-to-slf4j {:mvn/version "2.0.11"}}
+        org.slf4j/slf4j-api {:mvn/version "1.7.36"}
+        org.slf4j/jul-to-slf4j {:mvn/version "1.7.36"}}
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {}}}}

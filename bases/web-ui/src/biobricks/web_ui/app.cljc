@@ -10,6 +10,7 @@
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [medley.core :as me]
+            #?(:cljs [missionary.core :as m])
             [reitit.core :as rr]
             #?(:cljs [reitit.frontend.easy :as rfe]))
   #?(:clj (:import [java.time LocalDateTime])))

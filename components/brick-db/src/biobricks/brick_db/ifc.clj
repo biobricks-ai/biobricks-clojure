@@ -192,15 +192,12 @@
   [{:as instance, :keys [datalevin-conn]}]
   (let
     [git-repos ;; Split into 2 queries due to differing free vars
-     (->>
-       (dtlv/q
-         '[:find (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
-           :where [?e :git-repo/github-id]
-           (or
-             [(missing? $ ?e :biobrick/checked-at)]
-             [(missing? $ ?e :biobrick/data-pulled?)]
-             [?e :biobrick/data-pulled? false])]
-         (dtlv/db datalevin-conn))
+     (->> (dtlv/q
+            '[:find (pull ?e [*])
+              :where [?e :git-repo/github-id]
+              (or
+                [(missing? $ ?e :biobrick/checked-at)])]
+            (dtlv/db datalevin-conn))
        (concat (dtlv/q
                  '[:find
                    (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])

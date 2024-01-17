@@ -7,4 +7,8 @@
      ["/:brick-name"
       ["" :biobrick]
       ["/badge"
-       ["/health" :brick-badge-health]]]]]])
+       ["/health" :brick-badge-health]]]]]
+   ["/webhook"
+    ["/github"
+     ["/push"
+      :webhook-github-push]]]])

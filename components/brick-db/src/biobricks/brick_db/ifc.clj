@@ -207,10 +207,13 @@
        (concat (dtlv/q
                  '[:find
                    (pull ?e [:db/id :git-repo/clone-url :git-repo/full-name])
+                   :in $ ?check-after
                    :where [?e :biobrick/checked-at ?checked-at]
                    [?e :git-repo/updated-at ?updated-at]
-                   [(.after ?updated-at ?checked-at)]]
-                 (dtlv/db datalevin-conn))))]
+                   (or [(.after ?updated-at ?checked-at)]
+                     [(.after ?check-after ?checked-at)])]
+                 (dtlv/db datalevin-conn)
+                 (java.util.Date. (- (System/currentTimeMillis) (* 24 60 60 1000))))))]
     (doseq [[git-repo] git-repos]
       ; Limit operations to every 15 seconds to avoid hitting rate limits
       (let [start (System/nanoTime)]

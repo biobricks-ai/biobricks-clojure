@@ -141,9 +141,14 @@
     (log/info "Acquired lock for" full-name)
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
           dir (if (fs/exists? path)
-                (do @(p/process {:dir (fs/file path), :err :string, :out :string}
-                       "git"
-                       "pull")
+                (let [branch (-> @(p/process {:dir (fs/file path) :err :string :out :string}
+                                    "git" "rev-parse" "--abbrev-ref" "HEAD")
+                               :out
+                               str/trim)]
+                  ; This avoids problems if the repo was force-pushed to since
+                  ; the last pull.
+                  @(p/process {:dir (fs/file path), :err :string, :out :string}
+                     "git" "reset" "--hard" (str "origin/" branch))
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))

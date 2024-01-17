@@ -159,7 +159,11 @@
           commit-time (brick-repo/git-unix-commit-time dir git-sha)
           {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
       (if-not is-brick?
-        (->> [{:db/id id, :git-repo/is-biobrick? false}]
+        (->> [{:db/id id
+               ; Even when not a biobrick, we want to track when we checked
+               ; whether it was a brick or not.
+               :biobrick/checked-at (java.util.Date.)
+               :git-repo/is-biobrick? false}]
           (dtlv/transact! datalevin-conn))
         (do (->> [(me/remove-vals
                     nil?

@@ -140,24 +140,30 @@
   (locking (get-lock! full-name)
     (log/info "Acquired lock for" full-name)
     (let [path (apply fs/path bricks-path (str/split full-name #"\/"))
+          refs (->> @(p/process {:dir (fs/file path) :err :string :out :string}
+                      "git" "show-ref")
+                 :out str/split-lines (remove str/blank?))
           dir (if (fs/exists? path)
                 (let [branch (-> @(p/process {:dir (fs/file path) :err :string :out :string}
                                     "git" "rev-parse" "--abbrev-ref" "HEAD")
                                :out
                                str/trim)]
-                  ; This avoids problems if the repo was force-pushed to since
-                  ; the last pull.
-                  @(p/process {:dir (fs/file path), :err :string, :out :string}
-                     "git" "reset" "--hard" (str "origin/" branch))
-                  ; This is needed in the case when there are no local commits
-                  @(p/process {:dir (fs/file path), :err :string, :out :string}
-                     "git" "pull")
+                  (if (seq refs)
+                    ; This avoids problems if the repo was force-pushed to since
+                    ; the last pull.
+                    @(p/process {:dir (fs/file path), :err :string, :out :string}
+                       "git" "reset" "--hard" (str "origin/" branch))
+                    
+                    ; Handle the case when there are no local commits and thus no HEAD
+                    @(p/process {:dir (fs/file path), :err :string, :out :string}
+                       "git" "pull"))
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))
-          git-sha (brick-repo/git-sha dir)
-          commit-time (brick-repo/git-unix-commit-time dir git-sha)
-          {:keys [data-bytes health-git is-brick?]} (brick-repo/brick-info dir)]
+          git-sha (when (seq refs) (brick-repo/git-sha dir))
+          commit-time (when (seq refs) (brick-repo/git-unix-commit-time dir git-sha))
+          {:keys [data-bytes health-git is-brick?]} (when (seq refs)
+                                                      (brick-repo/brick-info dir))]
       (if-not is-brick?
         (->> [{:db/id id
                ; Even when not a biobrick, we want to track when we checked

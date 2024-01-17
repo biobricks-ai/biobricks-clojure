@@ -148,15 +148,13 @@
                                     "git" "rev-parse" "--abbrev-ref" "HEAD")
                                :out
                                str/trim)]
-                  (if (seq refs)
+                  (when (seq refs)
                     ; This avoids problems if the repo was force-pushed to since
                     ; the last pull.
                     @(p/process {:dir (fs/file path), :err :string, :out :string}
-                       "git" "reset" "--hard" (str "origin/" branch))
-                    
-                    ; Handle the case when there are no local commits and thus no HEAD
-                    @(p/process {:dir (fs/file path), :err :string, :out :string}
-                       "git" "pull"))
+                       "git" "reset" "--hard" (str "origin/" branch)))
+                  @(p/process {:dir (fs/file path), :err :string, :out :string}
+                     "git" "pull")
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))

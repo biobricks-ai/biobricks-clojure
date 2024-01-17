@@ -149,6 +149,9 @@
                   ; the last pull.
                   @(p/process {:dir (fs/file path), :err :string, :out :string}
                      "git" "reset" "--hard" (str "origin/" branch))
+                  ; This is needed in the case when there are no local commits
+                  @(p/process {:dir (fs/file path), :err :string, :out :string}
+                     "git" "pull")
                   path)
                 (do (fs/create-dirs (fs/parent path))
                   (brick-repo/clone (fs/parent path) clone-url)))

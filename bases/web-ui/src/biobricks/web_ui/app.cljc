@@ -388,27 +388,30 @@
                                (pred %) true
                                :else (recur more)))
           start (System/nanoTime)
-          repos (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
-                               :where
-                               [?e :git-repo/archived? false]
-                               [?e :git-repo/git-sha-latest ?sha]
-                               [?e :git-repo/is-biobrick? true]
-                               [?file :biobrick-file/biobrick ?e]
-                               [?file :biobrick-file/git-sha ?sha]]
-                       datalevin-db)
-                  (concat (dtlv/q '[:find (pull ?e [*]) :where
-                                    [?e :git-repo/archived? false]
-                                    [?e :git-repo/is-biobrick? true]
-                                    (not [?file :biobrick-file/biobrick ?e])]
-                            datalevin-db)))
-          repos (let [[_ f g] (sort-options sort-by-opt)]
-                  (->> repos
-                    (sort-by (comp f first))
-                    ((or g identity))
-                    (map (fn [[repo files]]
-                           [repo
-                            (dtlv/pull-many datalevin-db '[*] files)]))
-                    (filter #(and (health-filter-f %) (file-type-filter-f %)))))
+          repos (e/offload
+                  #(->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file)
+                                  :where
+                                  [?e :git-repo/archived? false]
+                                  [?e :git-repo/git-sha-latest ?sha]
+                                  [?e :git-repo/is-biobrick? true]
+                                  [?file :biobrick-file/biobrick ?e]
+                                  [?file :biobrick-file/git-sha ?sha]]
+                          datalevin-db)
+                     (concat (dtlv/q '[:find (pull ?e [*]) :where
+                                       [?e :git-repo/archived? false]
+                                       [?e :git-repo/is-biobrick? true]
+                                       (not [?file :biobrick-file/biobrick ?e])]
+                               datalevin-db))))
+          repos (e/offload
+                  (fn []
+                    (let [[_ f g] (sort-options sort-by-opt)]
+                      (->> repos
+                        (sort-by (comp f first))
+                        ((or g identity))
+                        (map (fn [[repo files]]
+                               [repo
+                                (dtlv/pull-many datalevin-db '[*] files)]))
+                        (filter #(and (health-filter-f %) (file-type-filter-f %)))))))
           repos-on-page (->> repos
                           (drop (* 10 (dec page)))
                           (take 10)
@@ -430,27 +433,38 @@
                 (Repos. repos-on-page)
                 (PageSelector. page num-pages)))))))))
 
+#?(:clj
+   (defn get-repo-data [datalevin-db repo-name]
+     (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :in $ ?name
+                    :where [?e :git-repo/is-biobrick? true]
+                    [?e :git-repo/full-name ?name]
+                    [?e :git-repo/git-sha-latest ?sha]
+                    [?file :biobrick-file/biobrick ?e]
+                    [?file :biobrick-file/git-sha ?sha]]
+            datalevin-db
+            repo-name)
+       (concat (dtlv/q '[:find (pull ?e [*]) :in $ ?name :where
+                         [?e :git-repo/is-biobrick? true]
+                         [?e :git-repo/full-name ?name]
+                         (not [?file :biobrick-file/biobrick ?e])]
+                 datalevin-db
+                 repo-name))
+       first)))
+
+#?(:clj
+   (defn get-biobrick-files [datalevin-db biobrick-file-ids]
+     (dtlv/pull-many datalevin-db '[*] (take 100 biobrick-file-ids))))
+
 (e/defn BioBrickPage
   []
   (e/server
     (let [{:keys [brick-name org-name]} (e/client (-> router-flow
                                                     :path-params))
           repo-name (str org-name "/" brick-name)
-          [repo biobrick-file-ids]
-          #__ (->> (dtlv/q '[:find (pull ?e [*]) (distinct ?file) :in $ ?name
-                             :where [?e :git-repo/is-biobrick? true]
-                             [?e :git-repo/full-name ?name]
-                             [?file :biobrick-file/biobrick ?e]]
-                     datalevin-db
-                     repo-name)
-                (concat (dtlv/q '[:find (pull ?e [*]) :in $ ?name :where
-                                  [?e :git-repo/is-biobrick? true]
-                                  [?e :git-repo/full-name ?name]
-                                  (not [?file :biobrick-file/biobrick ?e])]
-                          datalevin-db
-                          repo-name))
-                first)
-          files (dtlv/pull-many datalevin-db '[*] (take 100 biobrick-file-ids))]
+          [repo biobrick-file-ids] (e/offload
+                                     #(get-repo-data datalevin-db repo-name))
+          files (e/offload
+                  #(get-biobrick-files datalevin-db biobrick-file-ids))]
       (e/client
         (dom/div (dom/div (dom/props {:class "xl:pl-72"})
                    (dom/main (dom/props {:clas "lg:pr-96"})

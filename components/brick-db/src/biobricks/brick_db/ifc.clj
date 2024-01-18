@@ -223,15 +223,6 @@
           (when (< 100 sleep-ms)
             (Thread/sleep sleep-ms)))))))
 
-(comment
-  (def instance
-    (-> @biobricks.web-ui.system/system
-      :donut.system/instances
-      :brick-data
-      :brick-db))
-  (check-github-repos instance)
-  (check-bricks instance))
-
 (defn brick-poller
   [{:as instance, :keys [brick-poll-interval-ms]}]
   (doto (Thread. #(run-every-ms brick-poll-interval-ms

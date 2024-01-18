@@ -1,7 +1,5 @@
-{:deps {com.hyperfiddle/electric {:mvn/version "v2-alpha-536-g0c582f78"}
+{:deps {com.hyperfiddle/electric {:mvn/version "v2-alpha-540-ga4699532"}
         com.hyperfiddle/heroicons-electric {:mvn/version "79c4d15"
                                             :exclusions [com.hyperfiddle/electric]}
-        info.sunng/ring-jetty9-adapter {:exclusions [org.slf4j/slf4j-api
-                                                     info.sunng/ring-jetty9-adapter-http3],
-                                        :mvn/version "0.22.1"}}
+        ring/ring-jetty-adapter {:mvn/version "1.11.0"}}
  :paths ["src"]}

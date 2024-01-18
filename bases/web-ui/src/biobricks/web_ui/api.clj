@@ -38,9 +38,10 @@
         instance (-> system :donut.system/instances :web-ui :app)]
   ; Shadow loads the app here, such that it shares memory with server.
     (def server (-> electric-server-config
-                  (assoc :extra-middleware [ring/wrap-routes
-                                            #(ring/wrap-instance % instance)])
-                  (->> (electric-jetty/start-server! boot/with-ring-request)))))
+                  (assoc :entrypoint boot/with-ring-request
+                    :extra-middleware [ring/wrap-routes
+                                       #(ring/wrap-instance % instance)])
+                  electric-jetty/start-server!)))
   (comment
     (.stop server)))
 

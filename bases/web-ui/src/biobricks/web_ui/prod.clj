@@ -23,8 +23,9 @@
   (let [system (system/start-system!)
         instance (-> system :donut.system/instances :web-ui :app)]
     (-> electric-server-config
-      (assoc :extra-middleware [ring/wrap-routes
-                                #(ring/wrap-instance % instance)])
-      (->> (electric-jetty/start-server! boot/with-ring-request)))))
+      (assoc :entrypoint boot/with-ring-request
+        :extra-middleware [ring/wrap-routes
+                           #(ring/wrap-instance % instance)])
+      electric-jetty/start-server!)))
 
 ; On CLJS side we reuse api.cljs for prod entrypoint

@@ -2,5 +2,4 @@
 
 clojure -M:antq \
   --exclude=com.hyperfiddle/heroicons-electric \
-  --exclude=info.sunng/ring-jetty9-adapter \
   "$@"

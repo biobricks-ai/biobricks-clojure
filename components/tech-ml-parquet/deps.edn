@@ -1,5 +1,5 @@
 {:aliases {:test {:extra-paths ["test" "test-resources"]}},
- :deps {techascent/tech.ml.dataset {:mvn/version "7.021"},
+ :deps {techascent/tech.ml.dataset {:mvn/version "7.022"},
         org.apache.parquet/parquet-hadoop
           {:exclusions [org.slf4j/slf4j-log4j12], :mvn/version "1.13.1"},
         org.apache.hadoop/hadoop-common {:mvn/version "3.3.6"},

@@ -8,8 +8,7 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      with import nixpkgs { inherit system; };
-{
+      with import nixpkgs { inherit system; }; {
         devShells.default = mkShell {
           buildInputs = [
             clojure

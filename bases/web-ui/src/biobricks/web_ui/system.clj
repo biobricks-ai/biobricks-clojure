@@ -29,7 +29,7 @@
                   :brick-poll-interval-ms (* 1000 15),
                   :file-poll-interval-ms (* 1000 15)
                   :github-org-name "biobricks-ai",
-                  :github-poll-interval-ms (* 1000 60 5),
+                  :github-poll-interval-ms (* 1000 60 60),
                   :github-token (github/get-token-from-env),
                   :maintain-disk-free-bytes (* 100 1024 1024 1024),
                   :pull-dvc-data? false}),

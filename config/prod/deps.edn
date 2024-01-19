@@ -1,0 +1,2 @@
+; Allow use as a :local/root dependency
+{:paths ["."]}

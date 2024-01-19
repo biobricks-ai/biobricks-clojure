@@ -1,5 +1,6 @@
 (ns biobricks.web-ui.system
   (:require [biobricks.brick-db.ifc :as brick-db]
+            [biobricks.cfg.ifc :as cfg]
             [biobricks.datalevin.ifc :as datalevin]
             [biobricks.github.ifc :as github]
             [biobricks.nrepl.ifc :as nrepl]
@@ -23,22 +24,23 @@
   []
   {::ds/defs
    {:brick-data
-    {:brick-db (brick-db/component
-                 {:bricks-path "bricks",
-                  :datalevin-conn (ds/local-ref [:local-datalevin :conn]),
-                  :brick-poll-interval-ms (* 1000 15),
-                  :file-poll-interval-ms (* 1000 15)
-                  :github-org-name "biobricks-ai",
-                  :github-poll-interval-ms (* 1000 60 60),
-                  :github-token (github/get-token-from-env),
-                  :maintain-disk-free-bytes (* 100 1024 1024 1024),
-                  :pull-dvc-data? false}),
+    {:brick-db (brick-db/component (ds/local-ref [:brick-db-config]))
+     :brick-db-config (cfg/config-merger
+                        [(ds/ref [:config :final :brick-db])
+                         {:github-token (github/get-token-from-env)
+                          :datalevin-conn (ds/local-ref [:local-datalevin :conn])}])
      :datalevin-schema (sys/thunk-component brick-db/datalevin-schema),
      :local-datalevin (datalevin/local-db-component
                         {:dir "datalevin",
                          :schema (ds/local-ref [:datalevin-schema])})},
+    :config
+    {:base (cfg/config {:resource-name "web-ui-config.edn"})
+     :default (cfg/config {:resource-name "default-web-ui-config.edn"})
+     :final (cfg/config-merger
+              [(ds/local-ref [:default])
+               (ds/local-ref [:base])])}
     :nrepl
-    {:server (nrepl/server {:port 7888})}
+    {:server (nrepl/server (ds/ref [:config :final :nrepl]))}
     :web-ui {:app (sys/config-component
                     {:brick-db (ds/ref [:brick-data :brick-db]),
                      :datalevin-conn (ds/ref [:brick-data :local-datalevin

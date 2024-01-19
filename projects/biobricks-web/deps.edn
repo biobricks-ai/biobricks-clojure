@@ -1,6 +1,7 @@
 {:deps
  {poly/brick-db {:local/root "../../components/brick-db"}
   poly/brick-repo {:local/root "../../components/brick-repo"}
+  poly/cfg {:local/root "../../components/cfg"}
   poly/datalevin {:local/root "../../components/datalevin"}
   poly/electric-jetty {:local/root "../../components/electric-jetty"}
   poly/github {:local/root "../../components/github"}
@@ -12,9 +13,12 @@
   poly/ui-table {:local/root "../../components/ui-table"}
   poly/web-ui {:local/root "../../bases/web-ui"}}
  :aliases
- {:prod {:jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
-                    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
-                    ]},
+ {:prod
+  {:extra-deps
+   {cfg/cfg {:local/root "../../config/prod"}}
+   :jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
+              "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
+              ]},
   :test
   {:extra-deps
    {polylith-kaocha.components/util

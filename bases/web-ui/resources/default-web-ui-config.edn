@@ -1,0 +1,10 @@
+{:brick-db
+ {:brick-poll-interval-ms 15000
+  :bricks-path "bricks"
+  :file-poll-interval-ms 15000
+  :github-org-name "biobricks-ai"
+  :github-poll-interval-ms 3600000
+  :maintain-disk-free-bytes 107374182400 ; 100 GiB
+  :pull-dvc-data? false}
+ :nrepl
+ {:port 0}}

@@ -1,16 +1,18 @@
 {:paths ["development"]
- :deps {poly/brick-db {:local/root "components/brick-db"}
-        poly/brick-repo {:local/root "components/brick-repo"}
-        poly/datalevin {:local/root "components/datalevin"}
-        poly/electric-jetty {:local/root "components/electric-jetty"}
-        poly/github {:local/root "components/github"}
-        poly/log {:local/root "components/log"}
-        poly/nrepl {:local/root "components/nrepl"}
-        poly/process {:local/root "components/process"}
-        poly/sys {:local/root "components/sys"}
-        poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"}
-        poly/ui-table {:local/root "components/ui-table"}
-        poly/web-ui {:local/root "bases/web-ui"}}
+ :deps
+ {poly/brick-db {:local/root "components/brick-db"}
+  poly/brick-repo {:local/root "components/brick-repo"}
+  poly/cfg {:local/root "components/cfg"}
+  poly/datalevin {:local/root "components/datalevin"}
+  poly/electric-jetty {:local/root "components/electric-jetty"}
+  poly/github {:local/root "components/github"}
+  poly/log {:local/root "components/log"}
+  poly/nrepl {:local/root "components/nrepl"}
+  poly/process {:local/root "components/process"}
+  poly/sys {:local/root "components/sys"}
+  poly/tech-ml-parquet {:local/root "components/tech-ml-parquet"}
+  poly/ui-table {:local/root "components/ui-table"}
+  poly/web-ui {:local/root "bases/web-ui"}}
  :aliases
  {:antq {:deps {com.github.liquidz/antq {:mvn/version "2.8.1173"},
                 org.slf4j/slf4j-nop {:mvn/version "2.0.11"}},
@@ -25,14 +27,18 @@
           :extra-paths ["src-build"],
           :jvm-opts ["-Xss2m"],
           :ns-default build},
-  :dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.7"},
-                     com.google.guava/guava {:mvn/version "31.0.1-jre"},
-                     thheller/shadow-cljs {:mvn/version "2.26.5"}},
-        :jvm-opts ["-Xss2m" ; https://github.com/hyperfiddle/photon/issues/11
-                   "-XX:-OmitStackTraceInFastThrow" ;; RCF
-                   "--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
-                   "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
-                   ]},
+  :dev
+  {:extra-deps
+   {binaryage/devtools {:mvn/version "1.0.7"},
+    com.google.guava/guava {:mvn/version "31.0.1-jre"},
+    thheller/shadow-cljs {:mvn/version "2.26.5"}
+    
+    cfg/cfg {:local/root "config/dev"}},
+   :jvm-opts ["-Xss2m" ; https://github.com/hyperfiddle/photon/issues/11
+              "-XX:-OmitStackTraceInFastThrow" ;; RCF
+              "--add-opens=java.base/java.nio=ALL-UNNAMED" ;; datalevin
+              "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
+              ]},
   :poly {:extra-deps
          {polylith-kaocha.components/util
           {:deps/root "components/util",
@@ -57,4 +63,7 @@
                     "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED" ;; datalevin
                     ],
          :main-opts ["-m" "polylith.clj.core.poly-cli.core"]},
+  :prod
+  {:extra-deps
+   {cfg/cfg {:local/root "config/prod"}}}
   :test {}}}

@@ -9,7 +9,6 @@
 (def lib 'ai.biobricks/biobricks-web)
 (def version
   (b/git-process {:git-args "describe --tags --long --always --dirty"}))
-(def basis (b/create-basis {:project "deps.edn"}))
 
 (defn clean [opts] (bb/clean opts))
 
@@ -40,28 +39,27 @@ on startup)"
   (b/process {:command-args ["bash" "bin/build-css"]}))
 
 (defn uberjar
-  [{:keys [jar-name version optimize debug verbose],
+  [{:keys [aliases jar-name version optimize debug verbose],
     :or {version version, optimize true, debug false, verbose false}}]
-  (println "Cleaning up before build")
-  (clean nil)
-  (println "Cleaning cljs compiler output")
-  (clean-cljs nil)
-  (build-client
-    {:optimize optimize, :debug debug, :verbose verbose, :version version})
+  (let [basis (b/create-basis {:aliases aliases :project "deps.edn"})]
+    (println "Cleaning up before build")
+    (clean nil)
+    (println "Cleaning cljs compiler output")
+    (clean-cljs nil)
+    (build-client
+      {:optimize optimize, :debug debug, :verbose verbose, :version version})
   ; CSS should come after JS because Tailwind analyzes the classes in the JS
-  (println "Building CSS")
-  (build-css nil)
-  (println "Bundling resources")
-  (b/copy-dir {:src-dirs ["bases/web-ui/resources"], :target-dir class-dir})
-  (println "Compiling server. Version:" version)
-  (b/compile-clj {:basis basis,
-                  :src-dirs ["src"],
-                  :ns-compile '[biobricks.web-ui.prod],
-                  :class-dir class-dir})
-  (println "Building uberjar")
-  (b/uber {:class-dir class-dir,
-           :uber-file (str (or jar-name (default-jar-name {:version version}))),
-           :basis basis,
-           :main 'biobricks.web-ui.prod}))
-
-(defn noop [_])                         ; run to preload mvn deps
+    (println "Building CSS")
+    (build-css nil)
+    (println "Bundling resources")
+    (b/copy-dir {:src-dirs ["bases/web-ui/resources"], :target-dir class-dir})
+    (println "Compiling server. Version:" version)
+    (b/compile-clj {:basis basis,
+                    :src-dirs ["src"],
+                    :ns-compile '[biobricks.web-ui.prod],
+                    :class-dir class-dir})
+    (println "Building uberjar")
+    (b/uber {:class-dir class-dir,
+             :uber-file (str (or jar-name (default-jar-name {:version version}))),
+             :basis basis,
+             :main 'biobricks.web-ui.prod})))

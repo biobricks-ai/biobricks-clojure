@@ -30,4 +30,4 @@ jobs:
 
       - name: Build
         run: |
-          nix develop -c clojure -X:build uberjar :jar-name target/biobricks-web-"$HYPERFIDDLE_ELECTRIC_APP_VERSION".jar :version '"'$HYPERFIDDLE_ELECTRIC_APP_VERSION'"'
+          nix develop -c clojure -X:build uberjar :jar-name target/biobricks-web-"$HYPERFIDDLE_ELECTRIC_APP_VERSION".jar :version '"'$HYPERFIDDLE_ELECTRIC_APP_VERSION'"' :aliases [:prod]

@@ -117,7 +117,13 @@
               (dom/h2 (dom/props
                         {:class
                          "min-w-0 text-sm font-semibold leading-6 text-white"})
-                (dom/a (dom/props {:class "flex gap-x-2" :href brick-href})
+                (dom/a
+                  (dom/props {:class "flex gap-x-2" :href brick-href})
+                  (dom/on "click"
+                    (e/fn [e]
+                      (.preventDefault e)
+                      (rfe/navigate :biobrick
+                        {:path-params {:brick-name brick-name :org-name org-name}})))
                   (dom/span (dom/props {:class "truncate"})
                     (dom/text org-name))
                   (dom/span (dom/props {:class "text-gray-400"})

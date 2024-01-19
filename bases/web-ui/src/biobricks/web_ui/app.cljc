@@ -96,23 +96,21 @@
      :biobrick/keys [health-check-failures]
      :git-repo/keys [full-name]}
     biobrick-files]]
-  (let [[org-name brick-name] (e/server (str/split full-name
-                                          (re-pattern "\\/")))
-        brick-data-files (->> biobrick-files
-                           (remove #(or (:biobrick-file/directory? %)
-                                      (:biobrick-file/missing? %)
-                                      (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
-                           (sort-by :biobrick-file/path))
-        extensions (->> brick-data-files
-                     (keep :biobrick-file/extension)
-                     set)
-        missing-files (->> biobrick-files
-                        (filter :biobrick-file/missing?))
-        brick-href (e/client
-                     (rfe/href :biobrick
-                       {:brick-name brick-name :org-name org-name}))]
-    (when biobrick-files
-      (e/client
+  (e/client
+    (let [[org-name brick-name] (str/split full-name (re-pattern "\\/"))
+          brick-data-files (->> biobrick-files
+                             (remove #(or (:biobrick-file/directory? %)
+                                        (:biobrick-file/missing? %)
+                                        (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
+                             (sort-by :biobrick-file/path))
+          extensions (->> brick-data-files
+                       (keep :biobrick-file/extension)
+                       set)
+          missing-files (->> biobrick-files
+                          (filter :biobrick-file/missing?))
+          brick-href (rfe/href :biobrick
+                       {:brick-name brick-name :org-name org-name})]
+      (when biobrick-files
         (dom/li
           (dom/props
             {:class
@@ -448,8 +446,9 @@
               (dom/main
                 (dom/props {:clas "lg:pr-96"})
                 (SortFilterControls. ui-settings)
-                (Repos. repos-on-page)
-                (PageSelector. page num-pages)))))))))
+                (when repos-on-page
+                  (Repos. repos-on-page)
+                  (PageSelector. page num-pages))))))))))
 
 #?(:clj
    (defn get-repo-data [datalevin-db repo-name]

@@ -149,12 +149,7 @@
         (ui-table/Head. ["Path" "Size" "Download"]))
       (e/fn []
         (ui-table/Body.
-          (e/for [{:biobrick-file/keys [dvc-url path size]}
-                  (->> biobrick-files
-                    (remove #(or (:biobrick-file/directory? %)
-                               (:biobrick-file/missing? %)
-                               (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
-                    (sort-by :biobrick-file/path))]
+          (e/for [{:biobrick-file/keys [dvc-url path size]} biobrick-files]
             (ui-table/Row.
               [(subs path 6)
                (e/server (some-> size humanize/filesize))

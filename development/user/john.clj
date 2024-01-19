@@ -18,8 +18,7 @@
     (def datalevin-conn (:datalevin-conn web-ui-app)))
   (brick-db/check-github-repos brick-db)
   (brick-db/check-bricks brick-db)
-
-  (-> biobricks.web-ui.api/server)
+  (brick-db/check-brick-by-id brick-db 59)
 
   ; Pull brick data
   (dtlv/q

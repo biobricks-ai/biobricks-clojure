@@ -97,13 +97,14 @@
                                     :biobrick-file/path path,
                                     :biobrick-file/size size}]]
            (try (hc/head dvc-url)
-             (if dir?
-               (get-biobrick-file-datoms*
-                 dir
-                 brick-id
-                 brick-config
-                 (brick-repo/resolve-dirs brick-config [file-spec]))
-               [(assoc biobrick-file :biobrick-file/missing? false)])
+             (concat
+               [(assoc biobrick-file :biobrick-file/missing? false)]
+               (when dir?
+                 (get-biobrick-file-datoms*
+                   dir
+                   brick-id
+                   brick-config
+                   (brick-repo/resolve-dirs brick-config [file-spec]))))
              (catch Exception e
                (if (= "status: 404" (ex-message e))
                  [(assoc biobrick-file :biobrick-file/missing? true)]

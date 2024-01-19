@@ -13,7 +13,8 @@
             #?(:cljs [missionary.core :as m])
             [reitit.core :as rr]
             #?(:cljs [reitit.frontend.easy :as rfe]))
-  #?(:clj (:import [java.time LocalDateTime])))
+  (:import [hyperfiddle.electric Pending]
+           #?(:clj [java.time LocalDateTime])))
 
 (e/def system (e/server (e/watch @(resolve 'biobricks.web-ui.system/system))))
 #?(:clj (defn instance
@@ -65,20 +66,29 @@
       (dom/props
         {:class
          "mt-3 flex items-center gap-x-2.5 text-xs leading-5 text-gray-400"})
-      (when (some-> data-bytes
-              pos?)
-        (dom/p (dom/props {:class "whitespace-nowrap"})
-          (dom/text (e/server (humanize/filesize data-bytes))))
-        (shapes/DotDivider.))
-      (when updated-at
-        (dom/p (dom/props {:class "whitespace-nowrap"})
-          (dom/text "Updated "
-            (e/server (date-str updated-at now))))
-        (shapes/DotDivider.))
-      (dom/a (dom/props {:href html-url :target "_blank"})
-        (dom/text "GitHub ")
-        (ho/arrow-top-right-on-square
-          (dom/props {:style {:display "inline" :width "1em"}}))))))
+      (try
+        (let [bytes (e/server (humanize/filesize data-bytes))
+              updated (e/server (some-> updated-at (date-str now)))]
+          (if-not (and bytes updated)
+            (dom/p (dom/props {:class "whitespace-nowrap"})
+              (dom/br))
+            (do
+              (when (some-> data-bytes
+                      pos?)
+                (dom/p (dom/props {:class "whitespace-nowrap"})
+                  (dom/text bytes))
+                (shapes/DotDivider.))
+              (when updated
+                (dom/p (dom/props {:class "whitespace-nowrap"})
+                  (dom/text "Updated " updated))
+                (shapes/DotDivider.))
+              (dom/a (dom/props {:href html-url :target "_blank"})
+                (dom/text "GitHub ")
+                (ho/arrow-top-right-on-square
+                  (dom/props {:style {:display "inline" :width "1em"}}))))))
+        (catch Pending _
+          (dom/p (dom/props {:class "whitespace-nowrap"})
+            (dom/br)))))))
 
 ; https://tailwindui.com/components/application-ui/lists/stacked-lists#component-0ed7aad9572071f226b71abe32c3868f
 (e/defn Repo
@@ -162,19 +172,26 @@
      :biobrick/keys [health-check-data health-check-failures]
      :git-repo/keys [description full-name]}
    biobrick-files]
-  (e/server
+  (e/client
     (let [[org-name brick-name] (str/split full-name (re-pattern "\\/"))
-          brick-data-files (->> biobrick-files
-                             (remove #(or (:biobrick-file/directory? %)
-                                        (:biobrick-file/missing? %)
-                                        (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
-                             (sort-by :biobrick-file/path))
-          extensions (->> brick-data-files
-                       (keep :biobrick-file/extension)
-                       set)
-          missing-files (->> biobrick-files
-                          (filter :biobrick-file/missing?))]
-      (e/client
+          brick-data-files (e/server
+                             (e/offload
+                               (fn []
+                                 (->> biobrick-files
+                                   (remove #(or (:biobrick-file/directory? %)
+                                              (:biobrick-file/missing? %)
+                                              (not (str/starts-with? (:biobrick-file/path %) "brick/"))))
+                                   (sort-by :biobrick-file/path)))))
+          extensions (e/server
+                       (e/offload
+                                 #(->> brick-data-files
+                                    (keep :biobrick-file/extension)
+                                    set)))
+          missing-files (e/server
+                          (e/offload
+                          #(->> biobrick-files
+                             (filterv :biobrick-file/missing?))))]
+      (when (and health-check-failures extensions missing-files)
         (dom/li
           (dom/props
             {:class

@@ -2,6 +2,7 @@
   (:require [biobricks.brick-db.ifc :as brick-db]
             [biobricks.datalevin.ifc :as datalevin]
             [biobricks.github.ifc :as github]
+            [biobricks.nrepl.ifc :as nrepl]
             [biobricks.sys.ifc :as sys]
             [clojure.stacktrace :as st]
             [donut.system :as ds]))
@@ -36,6 +37,8 @@
      :local-datalevin (datalevin/local-db-component
                         {:dir "datalevin",
                          :schema (ds/local-ref [:datalevin-schema])})},
+    :nrepl
+    {:server (nrepl/server {:port 7888})}
     :web-ui {:app (sys/config-component
                     {:brick-db (ds/ref [:brick-data :brick-db]),
                      :datalevin-conn (ds/ref [:brick-data :local-datalevin

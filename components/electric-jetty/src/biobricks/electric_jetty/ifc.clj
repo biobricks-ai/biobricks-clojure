@@ -12,7 +12,9 @@
             [ring.util.response :as res])
   (:import [java.io IOException]
            [java.net BindException]
-           [org.eclipse.jetty.server.handler.gzip GzipHandler]))
+           [org.eclipse.jetty.server.handler.gzip GzipHandler]
+           [org.eclipse.jetty.websocket.server.config JettyWebSocketServletContainerInitializer
+            JettyWebSocketServletContainerInitializer$Configurator]))
 
 (defn template
   "Takes a `string` and a map of key-values `kvs`. Replace all instances of `$key$` by value in `string`"
@@ -94,6 +96,17 @@
       (.setMinGzipSize 1024)
       (.setHandler (.getHandler server)))))
 
+(defn- configure-websocket!
+  "Tune Jetty Websocket config for Electric compat." [server]
+  (JettyWebSocketServletContainerInitializer/configure
+    (.getHandler server)
+    (reify JettyWebSocketServletContainerInitializer$Configurator
+      (accept [_this _servletContext wsContainer]
+        (.setIdleTimeout wsContainer (java.time.Duration/ofSeconds 60))
+        (.setMaxBinaryMessageSize wsContainer (* 100 1024 1024)) ; 100M - temporary
+        (.setMaxTextMessageSize wsContainer (* 100 1024 1024))   ; 100M - temporary
+        ))))
+
 (defn start-server!
   [config]
   (let [{:as config :keys [host port]}
@@ -106,7 +119,9 @@
       (let [server (ring/run-jetty
                      (http-middleware config)
                      (merge {:join? false,
-                             :configurator add-gzip-handler}
+                             :configurator (fn [server]
+                                             (configure-websocket! server)
+                                             (add-gzip-handler server))}
                        config))
             final-port (-> server
                          (.getConnectors)
